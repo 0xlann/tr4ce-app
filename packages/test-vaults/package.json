@@ -1,0 +1,21 @@
+{
+  "name": "@tr4ce/test-vaults",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && cp src/manifest.json dist/manifest.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tr4ce/domain": "workspace:*",
+    "zod": "4.5.4"
+  }
+}
