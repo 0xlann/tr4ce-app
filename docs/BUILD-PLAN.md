@@ -77,12 +77,12 @@ Acceptance: A valid example report round-trips through JSON; converting every bi
 
 - [x] Search `substreams.dev`; record exact compatible packages and extend/reuse decision in the package README.
 - [x] Add one candidate vault, verify chain/address/code, `asset()`, events, and historical calls before adding more.
-- [~] Write failing `substreams::testing::map!` and real-block fixture tests for separate typed `Deposit`, `Withdraw`, and `ShareTransfer` messages, mint/burn exclusion, and reverted block-scoped calls. **Partly done.** Mint/burn classification and reverted block-scoped calls are covered by pure unit tests in `events.rs` and `snapshots.rs`, and the typed messages are asserted against live Base by `tests/check-live.sh` plus golden fixtures. Still missing: `substreams::testing::map!` handler tests, and offline `firecore` block fixtures so decoding can be tested without a network. See issue #3.
+- [~] Write failing `substreams::testing::map!` and real-block fixture tests for separate typed `Deposit`, `Withdraw`, and `ShareTransfer` messages, mint/burn exclusion, and reverted block-scoped calls. **Partly done.** Mint/burn classification and reverted block-scoped calls are covered by pure unit tests in `events.rs` and `snapshots.rs`, and the typed messages are asserted against live Base by `tests/check-live.sh` plus golden fixtures. Still missing: `substreams::testing::map!` handler tests, and offline `firecore` block fixtures so decoding can be tested without a network. See issue #2.
 - [x] Implement address filtering and ABI decoding into one dedicated protobuf type per event; never emit a generic raw/JSON event bag.
 - [x] Implement batched block-scoped reads for `totalAssets`, `totalSupply`, decimals, and one-share `convertToAssets`; represent per-method failures, never panic on a vault revert.
 - [x] Add two more verified vaults using the same protobuf and tests; span two protocols or networks only if honest comparability passes.
 - [x] Run `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`, `substreams build`, and a bounded pinned `substreams run -o jsonl`; compare the CLI output with a reviewed golden fixture.
-- [ ] Publish the versioned package and record package hash/endpoint. **Held pending a public-visibility decision; see issue #2.**
+- [ ] Publish the versioned package and record package hash/endpoint. **Held pending a public-visibility decision; see issue #1.**
 - [ ] Commit as `feat(tr4ce): publish normalized erc4626 stream`.
 
 Acceptance: The same module and output schema emit data for at least three verified vaults; no address-specific branch exists in generic event decoding.
