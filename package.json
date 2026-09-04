@@ -1,0 +1,21 @@
+{
+  "name": "tr4ce",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22 <25",
+    "pnpm": ">=10 <11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "turbo": "2.10.12",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}
