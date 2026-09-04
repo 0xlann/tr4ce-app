@@ -1,0 +1,42 @@
+[package]
+name = "tr4ce-erc4626"
+version = "0.1.0"
+edition = "2021"
+description = "Normalized, typed ERC-4626 vault flows and block-scoped snapshots"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+substreams = "0.7"
+substreams-ethereum = "0.11"
+substreams-database-change = "4"
+# prost is pinned to 0.13 on purpose: substreams 0.7 requires prost ^0.13.3, and bumping to 0.14
+# links a second copy of prost into the tree.
+prost = "0.13"
+prost-types = "0.13"
+hex = "0.4"
+
+# ethabi must stay at 17. substreams-ethereum-core pins ethabi 17; version 18 still compiles but
+# silently links a second copy of the ethabi/ethereum-types/primitive-types stack, whose types are
+# not interchangeable with the ones Abigen generates against.
+ethabi = "17"
+
+# Required by the Abigen-generated code in src/abi/. Kept on the same major as the copy
+# substreams-ethereum-core already pulls in (0.4.x) so the tree unifies on one version.
+num-bigint = "0.4"
+
+[build-dependencies]
+# Required here as well as in [dependencies]: build.rs runs Abigen.
+substreams-ethereum = "0.11"
+prost-build = "0.13"
+
+[dev-dependencies]
+base64 = "0.22"
+
+[profile.release]
+lto = true
+opt-level = "s"
+strip = "debuginfo"

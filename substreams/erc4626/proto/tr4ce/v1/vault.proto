@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package tr4ce.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Canonical event identity. Never deduplicate on transaction hash alone.
+message EventRef {
+  uint64 chain_id = 1;
+  bytes block_hash = 2;
+  bytes transaction_hash = 3;
+  uint32 log_index = 4;
+  uint64 block_number = 5;
+  google.protobuf.Timestamp block_time = 6;
+}
+
+message Deposit {
+  EventRef ref = 1;
+  string vault = 2;
+  string sender = 3;
+  string owner = 4;
+  string assets = 5;
+  string shares = 6;
+}
+
+message Withdraw {
+  EventRef ref = 1;
+  string vault = 2;
+  string sender = 3;
+  string receiver = 4;
+  string owner = 5;
+  string assets = 6;
+  string shares = 7;
+}
+
+// Share mints and burns are classified, not discarded, so the evidence engine can prove it
+// excluded them from economic flow rather than silently never seeing them.
+enum TransferKind {
+  TRANSFER_KIND_UNSPECIFIED = 0;
+  TRANSFER_KIND_TRANSFER = 1;
+  TRANSFER_KIND_MINT = 2;
+  TRANSFER_KIND_BURN = 3;
+}
+
+message ShareTransfer {
+  EventRef ref = 1;
+  string vault = 2;
+  string from = 3;
+  string to = 4;
+  string shares = 5;
+  TransferKind kind = 6;
+}
+
+enum CallStatus {
+  CALL_STATUS_UNSPECIFIED = 0;
+  CALL_STATUS_OK = 1;
+  CALL_STATUS_PARTIAL = 2;
+  CALL_STATUS_REVERTED = 3;
+}
+
+message CallError {
+  string method = 1;
+  string classification = 2;
+}
+
+message SnapshotTrigger {
+  bool activity = 1;
+  bool checkpoint = 2;
+  bool window_anchor = 3;
+}
+
+message VaultSnapshot {
+  uint64 chain_id = 1;
+  uint64 block_number = 2;
+  bytes block_hash = 3;
+  google.protobuf.Timestamp block_time = 4;
+  string vault = 5;
+  string asset = 6;
+  uint32 share_decimals = 7;
+  uint32 asset_decimals = 8;
+  // Empty string means the call did not produce a value. It never means zero.
+  string total_assets = 9;
+  string total_supply = 10;
+  string one_share_units = 11;
+  string one_share_assets = 12;
+  CallStatus call_status = 13;
+  repeated CallError call_errors = 14;
+  SnapshotTrigger trigger = 15;
+  string schema_version = 16;
+}
+
+// Intermediate output of map_vault_events.
+message VaultEvents {
+  uint64 chain_id = 1;
+  uint64 block_number = 2;
+  bytes block_hash = 3;
+  google.protobuf.Timestamp block_time = 4;
+  repeated Deposit deposits = 5;
+  repeated Withdraw withdrawals = 6;
+  repeated ShareTransfer share_transfers = 7;
+  string schema_version = 8;
+}
+
+// Frozen contract from docs/technical/INTEGRATIONS.md section 2. Do not reshape.
+message VaultBlockBatch {
+  uint64 chain_id = 1;
+  uint64 block_number = 2;
+  bytes block_hash = 3;
+  google.protobuf.Timestamp block_time = 4;
+  repeated Deposit deposits = 5;
+  repeated Withdraw withdrawals = 6;
+  repeated ShareTransfer share_transfers = 7;
+  repeated VaultSnapshot snapshots = 8;
+  string schema_version = 9;
+}

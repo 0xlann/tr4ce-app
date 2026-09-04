@@ -1,0 +1,70 @@
+[
+  {
+    "type": "event",
+    "name": "Deposit",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "name": "sender", "type": "address" },
+      { "indexed": true,  "name": "owner",  "type": "address" },
+      { "indexed": false, "name": "assets", "type": "uint256" },
+      { "indexed": false, "name": "shares", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Withdraw",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "name": "sender",   "type": "address" },
+      { "indexed": true,  "name": "receiver", "type": "address" },
+      { "indexed": true,  "name": "owner",    "type": "address" },
+      { "indexed": false, "name": "assets",   "type": "uint256" },
+      { "indexed": false, "name": "shares",   "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Transfer",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "name": "from",  "type": "address" },
+      { "indexed": true,  "name": "to",    "type": "address" },
+      { "indexed": false, "name": "value", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "asset",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "decimals",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8" }]
+  },
+  {
+    "type": "function",
+    "name": "totalAssets",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "convertToAssets",
+    "stateMutability": "view",
+    "inputs": [{ "name": "shares", "type": "uint256" }],
+    "outputs": [{ "name": "assets", "type": "uint256" }]
+  }
+]
