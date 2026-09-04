@@ -1,0 +1,19 @@
+import { z } from "zod";
+
+export const reasonCodeSchema = z.enum([
+  "MISSING_OBSERVATION",
+  "STALE_EVIDENCE",
+  "INCOMPATIBLE_ASSET",
+  "INCOMPATIBLE_IMPLEMENTATION",
+  "CALL_REVERTED",
+  "UNSUPPORTED_CAPABILITY",
+  "AMBIGUOUS_CAPABILITY",
+  "UNSUPPORTED_VAULT",
+  "PROVIDER_UNAVAILABLE",
+  "REORG_INVALIDATED",
+  "INVALID_POLICY",
+  "SIMULATION_REVERTED",
+  "SIMULATION_STALE",
+  "WALLET_CONTEXT_CHANGED",
+]);
+export type ReasonCode = z.infer<typeof reasonCodeSchema>;
