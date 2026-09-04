@@ -1,0 +1,804 @@
+{
+  "schemaVersion": "1.0.0",
+  "network": "base",
+  "chainId": 8453,
+  "canonicalAssets": [
+    {
+      "canonicalKey": "USDC",
+      "chainId": 8453,
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "sourceUrl": "https://developers.circle.com/stablecoins/usdc-contract-addresses"
+    }
+  ],
+  "vaults": [
+    {
+      "chainId": 8453,
+      "address": "0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "assetCanonicalKey": "USDC",
+      "protocolSlug": "morpho-blue",
+      "adapterKey": "morpho-v2",
+      "adapterVersion": "metamorpho-1.1",
+      "shareDecimals": 18,
+      "assetDecimals": 6,
+      "name": "Gauntlet USDC Prime",
+      "symbol": "gtUSDCp",
+      "deploymentBlock": "15327791",
+      "windowStartBlock": "50577041",
+      "status": "listed",
+      "statusReason": null,
+      "evidence": {
+        "verifiedAt": "2026-09-04T18:58:13.000Z",
+        "rpcProviderKey": "base-public-mainnet",
+        "codeHash": "0x904289f0cca9814e4440e741e0d56aafc656f5889f3f032462a96e72df4eb9ad",
+        "implementationAddress": null,
+        "implementationCodeHash": null,
+        "latestProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000012",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000017bae8e89c04f",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000013718797a8401ab0a9e8eca",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010eff8",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000063f9e5b",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000051ea948074d2a3e01",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000c809e9c87d50c55",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010eff8",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          }
+        ],
+        "historicalProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000018998773f0a74",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x00000000000000000000000000000000000000000142c364d7ab34f3f1d6d557",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010ec60",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000d1edffd54b",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          }
+        ],
+        "earliestFlowBlock": "50870500",
+        "earliestFlowTransactionHash": "0xc21c094783f3f466b48f65867d1e6248b2c1740c7730f29a78e15d21c6c18752",
+        "windowCoverageDays": 7,
+        "sourceUrls": [
+          "https://developers.circle.com/stablecoins/usdc-contract-addresses"
+        ]
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xef417a2512C5a41f69AE4e021648b69a7CdE5D03",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "assetCanonicalKey": "USDC",
+      "protocolSlug": "morpho-blue",
+      "adapterKey": "morpho-v2",
+      "adapterVersion": "metamorpho-1.1",
+      "shareDecimals": 18,
+      "assetDecimals": 6,
+      "name": "Yearn OG USDC",
+      "symbol": "ymvOG-USDC",
+      "deploymentBlock": "26515523",
+      "windowStartBlock": "50577041",
+      "status": "listed",
+      "statusReason": null,
+      "evidence": {
+        "verifiedAt": "2026-09-04T18:59:02.000Z",
+        "rpcProviderKey": "base-public-mainnet",
+        "codeHash": "0x453411046b182e0bdc46df9d09dd8be7102f2a95f6fc986fd981a56ea0323afc",
+        "implementationAddress": null,
+        "implementationCodeHash": null,
+        "latestProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "reverted",
+            "atBlock": "50879441",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000001d1dc118531",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000186b9f33ba9158c7f3984",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000108bdc",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000019571b15e29",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000001540e1ce86d14784dc2ad",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000ccc42923142a75d",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000108bdc",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          }
+        ],
+        "historicalProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000020c3a83faf8",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x00000000000000000000000000000000000000000001b81430bc1c11a5cd8246",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010880b",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000015a198200df54e3dcc3f2",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          }
+        ],
+        "earliestFlowBlock": "50874572",
+        "earliestFlowTransactionHash": "0x33d187b5c8b87150aff088ddaef4954aa12f8e4ea1d176f61f75ee4080e7d1d6",
+        "windowCoverageDays": 7,
+        "sourceUrls": [
+          "https://developers.circle.com/stablecoins/usdc-contract-addresses"
+        ]
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "assetCanonicalKey": "USDC",
+      "protocolSlug": "yearn-v3",
+      "adapterKey": "yearn-v3",
+      "adapterVersion": "3.0.4",
+      "shareDecimals": 6,
+      "assetDecimals": 6,
+      "name": "Morpho Yearn Morpho Vault 1 Compounder",
+      "symbol": "ysUSDC",
+      "deploymentBlock": "29104865",
+      "windowStartBlock": "50577041",
+      "status": "listed",
+      "statusReason": null,
+      "evidence": {
+        "verifiedAt": "2026-09-04T18:59:52.000Z",
+        "rpcProviderKey": "base-public-mainnet",
+        "codeHash": "0x1a2bda1e5d6b66646fe4cab689cd3990362ea42c53f17345137c0b06d0555400",
+        "implementationAddress": "0xd377919fa87120584b21279a491f82d5265a139c",
+        "implementationCodeHash": "0x15b3018d50c4988a5e21fdc9e87e7f9ace4789a4514a6235c93ff8657b952239",
+        "latestProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000019521eeb1e2",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000416a22ced6",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000005e8099",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000dd36097360",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000023b7c01225",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000000276b8",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000005e8099",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          }
+        ],
+        "historicalProbes": [
+          {
+            "method": "asset",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000019bf42890d8",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000005e69d2",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000dc694190d5",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000027750",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          }
+        ],
+        "earliestFlowBlock": "50874572",
+        "earliestFlowTransactionHash": "0x33d187b5c8b87150aff088ddaef4954aa12f8e4ea1d176f61f75ee4080e7d1d6",
+        "windowCoverageDays": 7,
+        "sourceUrls": [
+          "https://developers.circle.com/stablecoins/usdc-contract-addresses"
+        ]
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "assetCanonicalKey": "USDC",
+      "protocolSlug": "yearn-v3",
+      "adapterKey": "yearn-v3",
+      "adapterVersion": "3.0.4",
+      "shareDecimals": 6,
+      "assetDecimals": 6,
+      "name": "USDC Horizon yVault",
+      "symbol": "yvUSDC-H",
+      "deploymentBlock": "25168979",
+      "windowStartBlock": "50577041",
+      "status": "listed",
+      "statusReason": null,
+      "evidence": {
+        "verifiedAt": "2026-09-04T19:00:41.000Z",
+        "rpcProviderKey": "base-public-mainnet",
+        "codeHash": "0x9cbbbf6a1173fae2d7728e88b6e98819cdb39903e9df82fef7b439675b52d86a",
+        "implementationAddress": null,
+        "implementationCodeHash": null,
+        "latestProbes": [
+          {
+            "method": "asset",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000e959856b9e",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000d8028c166a",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000107bd0",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000009288a6",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000087a528",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000000e1ffc",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "supported",
+            "atBlock": "50879441",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000107bd0",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          }
+        ],
+        "historicalProbes": [
+          {
+            "method": "asset",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "decimals",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000006",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000e8489aa521",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "totalSupply",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "convertToAssets",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000107861",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "maxWithdraw",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          },
+          {
+            "method": "maxRedeem",
+            "status": "nonstandard_zero",
+            "atBlock": "50577041",
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "revertData": null,
+            "reasonCode": "AMBIGUOUS_CAPABILITY",
+            "note": "Returned zero for an owner holding shares; raw result preserved, capacity unresolved."
+          },
+          {
+            "method": "previewDeposit",
+            "status": "supported",
+            "atBlock": "50577041",
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000000e22ee",
+            "revertData": null,
+            "reasonCode": null,
+            "note": null
+          },
+          {
+            "method": "previewRedeem",
+            "status": "reverted",
+            "atBlock": "50577041",
+            "rawResult": null,
+            "revertData": null,
+            "reasonCode": "CALL_REVERTED",
+            "note": null
+          }
+        ],
+        "earliestFlowBlock": "50844807",
+        "earliestFlowTransactionHash": "0xfa93060962f2d107e616873bf0becc7f0d77af7ca5d027cbb6cfe0a068bcffb2",
+        "windowCoverageDays": 7,
+        "sourceUrls": [
+          "https://developers.circle.com/stablecoins/usdc-contract-addresses"
+        ]
+      }
+    }
+  ],
+  "snapshotCheckpointBlocks": 1800,
+  "declaredWindowDays": [
+    7
+  ]
+}
