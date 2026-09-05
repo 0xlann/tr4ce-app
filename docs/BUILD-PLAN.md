@@ -109,13 +109,25 @@ Acceptance: The same module and output schema emit data for at least three verif
 - [x] Run the built-in PostgreSQL sink, migrations, promotion, and integration tests against a fresh database.
 - [x] Commit as `feat(tr4ce): promote canonical vault evidence`.
 
-> **Partly done.** A Base reorg cannot be produced on demand, and the undo itself is the sink's
-> code, not ours. What is tested is the property the acceptance clause actually rests on: promotion
-> never reads above the confirmed head, so anything the sink is still entitled to undo has never
-> reached the application tables — asserted in `observations.integration.test.ts` by promoting a
-> range, deleting the unconfirmed raw rows exactly as a sink undo would, and re-promoting. The test
-> is named for what it proves. Observing a real pre-confirmation reorg on Base would need a run
-> held at chain head over a reorg, which is not reproducible in CI.
+> **Permanently partial, by decision.** Literally proving that the third-party sink binary
+> executes its own undo would need either a real Base reorg caught live — Base is a single-sequencer
+> L2, so an ordinary reorg essentially does not occur under normal operation — or a local Firehose
+> feeding the sink a manufactured fork, which is out of scope for this project. `substreams sink
+> postgres tools` has no undo-simulation command either.
+>
+> `docs/technical/TECH-STACK.md`'s own testing strategy defines "sink undo" coverage as "Vitest
+> against ephemeral PostgreSQL," not a live chain capture. That is exactly what
+> `observations.integration.test.ts` does: promote a range, delete the unconfirmed raw rows exactly
+> as a sink undo would, and re-promote to prove those rows were never touched. The test is named for
+> what it proves — that promotion never reads above the confirmed head, so anything the sink is
+> still entitled to undo has never reached the application tables.
+>
+> The remaining gap — catching the real sink binary mid-undo — depends on external chain behaviour
+> outside this repo's control. The project owner reviewed this tradeoff on 2026-09-05 and chose to
+> accept the item as permanently `[~]` rather than spend hackathon time chasing an event Base does
+> not reliably produce. Task 3's overall acceptance clause below is met: normal reorgs are removed
+> by the sink's own default, documented behaviour; replay is idempotent; a detected deep reorg
+> invalidates every promoted dependent — both verified by the tests already in place.
 >
 > **Deviation from ERD section 6:** minimal `evidence_report`, `report_observation`, and an
 > append-only `reorg_invalidation` table ship in `0001_registry_observations.sql`, because
