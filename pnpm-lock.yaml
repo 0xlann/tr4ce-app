@@ -93,6 +93,19 @@ importers:
         specifier: 4.5.4
         version: 4.5.4
 
+  packages/evidence:
+    dependencies:
+      '@tr4ce/domain':
+        specifier: workspace:*
+        version: link:../domain
+      zod:
+        specifier: 4.5.4
+        version: 4.5.4
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+
   packages/test-vaults:
     dependencies:
       '@tr4ce/domain':

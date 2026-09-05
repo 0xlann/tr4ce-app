@@ -157,13 +157,38 @@ export function observedShareValueReturn(
 export function buildEvidence(input: EvidenceInput): EvidenceReportV1;
 ```
 
-- [ ] Write failing tests for positive/negative/zero return, round-down boundary, zero denominator, missing start, incompatible decimals, and actual elapsed window.
-- [ ] Implement reduced rational arithmetic and explicit basis-point rounding.
-- [ ] Write flow tests that exclude mint/burn transfer duplication and separate deposits from withdrawals.
-- [ ] Write report tests proving every value carries source references and limitations.
-- [ ] Add a reproducibility fixture: canonical input hash and report JSON remain stable.
-- [ ] Run package tests and property cases across bounded bigint ranges.
-- [ ] Commit as `feat(tr4ce): calculate reproducible vault evidence`.
+- [x] Write failing tests for positive/negative/zero return, round-down boundary, zero denominator, missing start, incompatible decimals, and actual elapsed window.
+- [x] Implement reduced rational arithmetic and explicit basis-point rounding.
+- [x] Write flow tests that exclude mint/burn transfer duplication and separate deposits from withdrawals.
+- [x] Write report tests proving every value carries source references and limitations.
+- [x] Add a reproducibility fixture: canonical input hash and report JSON remain stable.
+- [x] Run package tests and property cases across bounded bigint ranges.
+- [x] Commit as `feat(tr4ce): calculate reproducible vault evidence`.
+
+> **Added beyond the file list:** `src/capability.ts` and `src/canonical.ts`. The manifest stores
+> capability evidence as probe arrays, so reducing an array to a per-method status needs a home
+> where the rule "`nonstandard_zero` becomes UNKNOWN, never FAIL" is enforced once instead of at
+> each call site. `canonical.ts` holds the deterministic serialiser the report identifier hashes.
+>
+> **`buildEvidence` returns a draft, not an `EvidenceReportV1`.** The V1 contract requires a
+> `policy` block, but policy is evaluated *against* evidence — taking an evaluation as input here
+> would invert that dependency inside the signature. `attachPolicy` closes the draft once Task 5's
+> evaluator has run, and parses the result against `evidenceReportV1Schema` so the published shape
+> is still proven here. An incomplete draft is refused rather than filled: the V1 contract has no
+> way to express "no share value", and emitting one anyway would mean inventing a number.
+>
+> **Deviation from ARCHITECTURE section 7:** that document describes
+> `CapabilityStatus = "supported" | "nonstandard" | "reverts" | "unknown"` over a flat
+> `{ maxWithdraw: CapabilityStatus, ... }` record. Neither shipped. The real contract is
+> `capabilityStatusSchema` in `@tr4ce/domain` — five members, `"supported" | "reverted" |
+> "nonstandard_zero" | "ambiguous" | "unsupported"` — over probe arrays, already written into
+> `manifest.json` for four verified vaults and the `vault_capability.capabilities` column. The
+> manifest is the event-period artifact; the document is stale, and the code follows the manifest.
+>
+> **ARCHITECTURE section 5's high-precision decimal library is not yet applicable.**
+> `observedShareValueSchema` carries no annualized field, so `returnBps` is reachable with bigint
+> rational arithmetic alone. Annualization is an optional display concern; when it arrives it must
+> be isolated in this package as that section requires.
 
 Acceptance: Missing/incompatible evidence yields structured `UNKNOWN` inputs; no `number` arithmetic touches token amounts.
 
