@@ -1,0 +1,22 @@
+{
+  "name": "@tr4ce/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "promote": "node --env-file-if-exists=../../.env dist/promote-confirmed.js",
+    "reconcile": "node --env-file-if-exists=../../.env dist/reconcile-deep-reorg.js"
+  },
+  "dependencies": {
+    "@tr4ce/db": "workspace:*",
+    "@tr4ce/domain": "workspace:*",
+    "@tr4ce/test-vaults": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "drizzle-orm": "0.45.2"
+  }
+}

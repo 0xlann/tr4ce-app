@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { addressSchema, blockHashSchema, blockNumberStringSchema, chainIdSchema } from "./identity.js";
+import { vaultStatusSchema } from "./observations.js";
 import { reasonCodeSchema } from "./reasons.js";
 
 /** Protocol adapter identities recognised by the evidence pipeline. */
@@ -81,7 +82,7 @@ export const curatedVaultSchema = z.object({
   deploymentBlock: blockNumberStringSchema,
   /** Drives the Substreams initialBlock. Pinning that to deploymentBlock forces a full replay. */
   windowStartBlock: blockNumberStringSchema,
-  status: z.enum(["candidate", "listed", "degraded", "unsupported"]),
+  status: vaultStatusSchema,
   statusReason: z.string().nullable(),
   evidence: vaultOnboardingEvidenceSchema,
 });

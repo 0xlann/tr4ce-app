@@ -100,14 +100,27 @@ Acceptance: The same module and output schema emit data for at least three verif
 **Consumes:** Reorg-aware raw tables populated by `substreams sink postgres`.  
 **Produces:** Confirmed, constrained application observations.
 
-- [ ] Define a dedicated raw sink schema using PostgreSQL Database Changes and the constrained application schema from the ERD.
-- [ ] Write an integration test that replays the same raw rows/promotion and expects identical application rows.
-- [ ] Write a pre-confirmation reorg test proving the sink undoes raw changes before promotion.
-- [ ] Write a deep-reorg test that marks promoted observations non-canonical and invalidates dependent reports.
-- [ ] Implement promotion for rows at or below `confirmedHead = rpcHead - confirmationDepth`, recording exact block hash.
-- [ ] Commit promotion rows and application cursor atomically; validate producer/schema version before commit.
-- [ ] Run the built-in PostgreSQL sink, migrations, promotion, and integration tests against a fresh database.
-- [ ] Commit as `feat(tr4ce): promote canonical vault evidence`.
+- [x] Define a dedicated raw sink schema using PostgreSQL Database Changes and the constrained application schema from the ERD.
+- [x] Write an integration test that replays the same raw rows/promotion and expects identical application rows.
+- [~] Write a pre-confirmation reorg test proving the sink undoes raw changes before promotion.
+- [x] Write a deep-reorg test that marks promoted observations non-canonical and invalidates dependent reports.
+- [x] Implement promotion for rows at or below `confirmedHead = rpcHead - confirmationDepth`, recording exact block hash.
+- [x] Commit promotion rows and application cursor atomically; validate producer/schema version before commit.
+- [x] Run the built-in PostgreSQL sink, migrations, promotion, and integration tests against a fresh database.
+- [x] Commit as `feat(tr4ce): promote canonical vault evidence`.
+
+> **Partly done.** A Base reorg cannot be produced on demand, and the undo itself is the sink's
+> code, not ours. What is tested is the property the acceptance clause actually rests on: promotion
+> never reads above the confirmed head, so anything the sink is still entitled to undo has never
+> reached the application tables — asserted in `observations.integration.test.ts` by promoting a
+> range, deleting the unconfirmed raw rows exactly as a sink undo would, and re-promoting. The test
+> is named for what it proves. Observing a real pre-confirmation reorg on Base would need a run
+> held at chain head over a reorg, which is not reproducible in CI.
+>
+> **Deviation from ERD section 6:** minimal `evidence_report`, `report_observation`, and an
+> append-only `reorg_invalidation` table ship in `0001_registry_observations.sql`, because
+> "invalidates every promoted dependent" cannot be demonstrated against tables that do not exist.
+> Task 6 extends these columns; it does not replace them.
 
 Acceptance: Normal reorgs are removed in staging before promotion; replay is idempotent; a detected deep reorg invalidates every promoted dependent.
 
