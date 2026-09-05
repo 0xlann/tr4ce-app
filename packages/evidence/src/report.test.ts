@@ -34,6 +34,7 @@ const probe = (method: string, status: string): CapabilityProbe =>
   }) as CapabilityProbe;
 
 const snapshot = (overrides: Partial<SnapshotObservation> = {}): SnapshotObservation => ({
+  vaultId: "11111111-1111-5111-8111-111111111111",
   blockNumber: "50879897",
   blockHash: `0x${"1".repeat(64)}`,
   blockTime: "2026-09-04T12:00:00.000Z",
@@ -155,10 +156,25 @@ describe("buildEvidence", () => {
   });
 
   it("refuses to compute across a producer schema change", () => {
+    // Reported as an implementation change, never INCOMPATIBLE_ASSET: the underlying token did not
+    // change, and claiming it did would tell a reader the vault swapped its asset.
     const draft = buildEvidence(input({ start: startSnapshot({ schemaVersion: "2.0.0" }) }));
 
-    expect(draft.reasonCodes).toContain("INCOMPATIBLE_ASSET");
+    expect(draft.reasonCodes).toContain("INCOMPATIBLE_IMPLEMENTATION");
+    expect(draft.reasonCodes).not.toContain("INCOMPATIBLE_ASSET");
     expect(draft.observations.shareValue).toBeNull();
+  });
+
+  it("throws rather than computing a return across two different vaults", () => {
+    /*
+     * Task 3 makes this impossible in the database through composite foreign keys; nothing
+     * structural prevents it here. It throws instead of returning a reason code because UNKNOWN is
+     * a normal outcome that gets rendered and moved past, and this is a caller bug that would
+     * otherwise surface as an ordinary data gap.
+     */
+    const foreign = snapshot({ vaultId: "22222222-2222-5222-8222-222222222222" });
+
+    expect(() => buildEvidence(input({ start: foreign }))).toThrow(/two vaults/);
   });
 
   it("reports totalAssets as unavailable when the read reverted", () => {
@@ -273,7 +289,7 @@ describe("reproducibility", () => {
   it("derives an id that matches the pinned fixture", () => {
     // Pinned so an accidental change to the hashed input surface is caught, not just an unstable
     // one. Update deliberately and never to make a test pass.
-    expect(buildEvidence(input()).reportId).toBe("trc_5ae3a7503c138767123b8eec6a5407b5");
+    expect(buildEvidence(input()).reportId).toBe("trc_1d3d1540e28b24ec3c56bd4cd424a5f8");
   });
 
   it("changes the id when any observed value changes", () => {

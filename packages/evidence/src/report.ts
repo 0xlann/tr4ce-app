@@ -1,5 +1,6 @@
 import {
   evidenceReportV1Schema,
+  provenanceEntrySchema,
   type BaseUnitString,
   type CapabilityProbe,
   type EvidenceReportV1,
@@ -25,6 +26,15 @@ import { observeShareValue } from "./share-value.js";
 
 /** One promoted `vault_snapshot`, with amounts already parsed out of PostgreSQL's decimal strings. */
 export interface SnapshotObservation {
+  /**
+   * Which vault this snapshot describes.
+   *
+   * Required so the engine can refuse a start and end taken from different vaults. Task 3 makes
+   * that impossible in the database through composite foreign keys; nothing structural prevents it
+   * one layer up, and the result would be a confident return computed across two vaults with
+   * provenance citing both blocks as though they belonged together.
+   */
+  vaultId: string;
   blockNumber: string;
   blockHash: string;
   /** ISO-8601 UTC. */
@@ -111,8 +121,21 @@ export interface EvidenceReportDraft {
 const BACKWARD_LOOKING_LIMITATION =
   "Observed share-value return is backward-looking and is not a forecast.";
 
-/** True when every value the V1 response contract requires is present. */
-export function isComplete(draft: EvidenceReportDraft): boolean {
+/** A draft carrying every value the V1 response contract requires. */
+export type CompleteEvidenceReportDraft = EvidenceReportDraft & {
+  observations: DraftObservations & {
+    shareValue: NonNullable<DraftObservations["shareValue"]>;
+    totalAssets: NonNullable<DraftObservations["totalAssets"]>;
+  };
+};
+
+/**
+ * True when every value the V1 response contract requires is present.
+ *
+ * A type guard rather than a boolean so `attachPolicy` needs no non-null assertion: an assertion
+ * would keep compiling if this predicate later stopped checking one of the fields.
+ */
+export function isComplete(draft: EvidenceReportDraft): draft is CompleteEvidenceReportDraft {
   return draft.observations.shareValue !== null && draft.observations.totalAssets !== null;
 }
 
@@ -136,9 +159,9 @@ export function buildEvidence(input: EvidenceInput): EvidenceReportDraft {
   const totalAssets = readTotalAssets(input, reasonCodes);
   const maxWithdrawAssets = readMaxWithdraw(input, reasonCodes);
 
-  const provenance = buildProvenance(input);
-  const limitations = buildLimitations(input, reasonCodes, flows);
   const elapsedSeconds = measureElapsed(input);
+  const provenance = buildProvenance(input);
+  const limitations = buildLimitations(input, reasonCodes, flows, elapsedSeconds);
 
   const observations: DraftObservations = {
     shareValue,
@@ -211,7 +234,7 @@ export function attachPolicy(
     );
   }
 
-  const shareValue = draft.observations.shareValue!;
+  const shareValue = draft.observations.shareValue;
 
   // Parsed, not cast: the schema is the contract, and a drift between this assembly and the
   // published shape must fail here rather than at an API boundary.
@@ -254,13 +277,29 @@ function checkCompatibility(input: EvidenceInput): ReasonCode[] {
     return reasons;
   }
 
+  /*
+   * A cross-vault pairing throws rather than returning a reason code. UNKNOWN is a normal outcome
+   * that gets rendered and moved past; this is a caller assembling nonsense, and letting it come
+   * back as ordinary missing evidence would hide a bug as a data condition.
+   */
+  if (input.start.vaultId !== input.end.vaultId) {
+    throw new Error(
+      `Start snapshot belongs to vault ${input.start.vaultId} but end belongs to ${input.end.vaultId}; refusing to compute a return across two vaults.`,
+    );
+  }
+
   if (input.start.oneShareUnits !== input.end.oneShareUnits) {
     reasons.push("INCOMPATIBLE_IMPLEMENTATION");
   }
 
   if (input.start.schemaVersion !== input.end.schemaVersion) {
-    // Two producer schema versions may quote the same field differently; refuse rather than assume.
-    reasons.push("INCOMPATIBLE_ASSET");
+    /*
+     * A producer schema change may quote the same field differently, so the two figures are not
+     * safely comparable. Reported as INCOMPATIBLE_IMPLEMENTATION, not INCOMPATIBLE_ASSET: the
+     * asset did not change, and saying it did would tell a reader the vault swapped its underlying
+     * token.
+     */
+    reasons.push("INCOMPATIBLE_IMPLEMENTATION");
   }
 
   return reasons;
@@ -326,33 +365,37 @@ function readMaxWithdraw(input: EvidenceInput, reasonCodes: ReasonCode[]): BaseU
 /** Every claim traces back to a block. Indexed observations and current reads are labelled apart. */
 function buildProvenance(input: EvidenceInput): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [
-    {
+    provenanceEntrySchema.parse({
       sourceType: "indexed",
       chainId: input.vault.chainId,
       blockNumber: input.end.blockNumber,
       blockHash: input.end.blockHash,
       reference: "vault_snapshot.end",
-    } as ProvenanceEntry,
+    }),
   ];
 
   if (input.start !== null) {
-    entries.push({
-      sourceType: "indexed",
-      chainId: input.vault.chainId,
-      blockNumber: input.start.blockNumber,
-      blockHash: input.start.blockHash,
-      reference: "vault_snapshot.start",
-    } as ProvenanceEntry);
+    entries.push(
+      provenanceEntrySchema.parse({
+        sourceType: "indexed",
+        chainId: input.vault.chainId,
+        blockNumber: input.start.blockNumber,
+        blockHash: input.start.blockHash,
+        reference: "vault_snapshot.start",
+      }),
+    );
   }
 
   if (input.accountLimits !== null) {
-    entries.push({
-      sourceType: "rpc",
-      chainId: input.vault.chainId,
-      blockNumber: input.accountLimits.blockNumber,
-      blockHash: input.accountLimits.blockHash,
-      reference: "account_limits.maxWithdraw",
-    } as ProvenanceEntry);
+    entries.push(
+      provenanceEntrySchema.parse({
+        sourceType: "rpc",
+        chainId: input.vault.chainId,
+        blockNumber: input.accountLimits.blockNumber,
+        blockHash: input.accountLimits.blockHash,
+        reference: "account_limits.maxWithdraw",
+      }),
+    );
   }
 
   return entries;
@@ -368,10 +411,9 @@ function buildLimitations(
   input: EvidenceInput,
   reasonCodes: readonly ReasonCode[],
   flows: FlowAggregate,
+  elapsed: number | null,
 ): string[] {
   const limitations = [BACKWARD_LOOKING_LIMITATION];
-
-  const elapsed = measureElapsed(input);
 
   if (elapsed !== null) {
     const actualDays = elapsed / 86_400;
@@ -442,6 +484,7 @@ function serialiseSnapshot(snapshot: SnapshotObservation | null): unknown {
   return snapshot === null
     ? null
     : {
+        vaultId: snapshot.vaultId,
         blockNumber: snapshot.blockNumber,
         blockHash: snapshot.blockHash,
         blockTime: snapshot.blockTime,
