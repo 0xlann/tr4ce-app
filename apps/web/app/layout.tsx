@@ -31,11 +31,28 @@ export const metadata: Metadata = {
   icons: { icon: "/icon-logo-t.png" },
 };
 
+/**
+ * Runs synchronously while the browser parses the HTML, so `[data-reveal]` elements are hidden
+ * before the first paint rather than flashing in un-animated and then being animated again.
+ *
+ * Deliberately not a `useEffect`: by the time an effect runs the browser has already painted.
+ * Equally deliberately an added class rather than a removed one — with scripting off the class is
+ * never applied, and every reveal element stays visible.
+ */
 const motionBootstrap = `document.documentElement.classList.add("gsapRunning");`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    /*
+     * `suppressHydrationWarning` because the bootstrap above adds a class to this element before
+     * React hydrates, so the DOM legitimately differs from the server HTML.
+     *
+     * Not cosmetic silencing: without it React treats the difference as a hydration error and
+     * re-renders from the nearest boundary on the client, which reintroduces the very flash the
+     * bootstrap exists to prevent. It suppresses only this element's own attributes — mismatches
+     * in any descendant still surface.
+     */
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: motionBootstrap }} />
       </head>
