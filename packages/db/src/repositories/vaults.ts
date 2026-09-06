@@ -1,5 +1,5 @@
 import type { CuratedVault, VaultManifest } from "@tr4ce/domain";
-import { eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 import type { Executor } from "../client.js";
 import { assetId, protocolId, vaultCapabilityId, vaultId } from "../ids.js";
@@ -375,4 +375,76 @@ export function resolveCapabilityAt(entry: VaultLookupEntry, blockNumber: bigint
   }
 
   return null;
+}
+
+/**
+ * The registry as a reader sees it, joined across vault, asset and capability profile.
+ *
+ * Distinct from `loadVaultLookup`, which carries only what promotion needs to attribute a raw row.
+ * Widening that one would put display metadata on the hot path of every promoted batch.
+ */
+export interface VaultDetail {
+  id: string;
+  chainId: number;
+  address: string;
+  symbol: string | null;
+  name: string | null;
+  shareDecimals: number;
+  status: string;
+  deploymentBlock: string | null;
+  assetAddress: string;
+  assetSymbol: string | null;
+  assetCanonicalKey: string;
+  /** The open capability profile: the interpretation currently in force for this vault's reads. */
+  adapterKey: string | null;
+  adapterVersion: string | null;
+  /** Recorded probe evidence from that profile. Empty when none was stored. */
+  capabilities: unknown;
+}
+
+export async function listVaultDetails(tx: Executor, chainId: number): Promise<VaultDetail[]> {
+  const rows = await tx
+    .select({
+      id: vault.id,
+      chainId: vault.chainId,
+      address: vault.address,
+      symbol: vault.symbol,
+      name: vault.name,
+      shareDecimals: vault.shareDecimals,
+      status: vault.status,
+      deploymentBlock: vault.deploymentBlock,
+      assetAddress: asset.address,
+      assetSymbol: asset.symbol,
+      assetCanonicalKey: asset.canonicalKey,
+      adapterKey: vaultCapability.adapterKey,
+      adapterVersion: vaultCapability.adapterVersion,
+      capabilities: vaultCapability.capabilities,
+    })
+    .from(vault)
+    .innerJoin(asset, eq(vault.assetId, asset.id))
+    // Left join and the open-profile filter: a vault with no capability row is still a vault, and
+    // hiding it would make the registry disagree with what the database actually holds.
+    .leftJoin(
+      vaultCapability,
+      and(eq(vaultCapability.vaultId, vault.id), isNull(vaultCapability.effectiveToBlock)),
+    )
+    .where(eq(vault.chainId, chainId))
+    .orderBy(asc(vault.address));
+
+  return rows.map((row) => ({
+    ...row,
+    address: bytesToHex(row.address),
+    assetAddress: bytesToHex(row.assetAddress),
+  }));
+}
+
+/** One curated vault, or null when the registry has never heard of the address. */
+export async function findVaultDetail(
+  tx: Executor,
+  chainId: number,
+  address: string,
+): Promise<VaultDetail | null> {
+  const wanted = address.toLowerCase();
+
+  return (await listVaultDetails(tx, chainId)).find((row) => row.address === wanted) ?? null;
 }

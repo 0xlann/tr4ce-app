@@ -2,6 +2,7 @@ export * from "./client.js";
 export * from "./ids.js";
 export * from "./migrate.js";
 export * from "./repositories/cursors.js";
+export * from "./repositories/evidence-window.js";
 export * from "./repositories/observations.js";
 export * from "./repositories/policies.js";
 export * from "./repositories/reports.js";

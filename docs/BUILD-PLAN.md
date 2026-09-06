@@ -253,16 +253,41 @@ Acceptance: Manual typed policy works with the LLM disabled; the LLM cannot add 
 
 **Produces:** Versioned HTTP endpoints with OpenAPI and immutable report URLs.
 
-- [ ] Implement the remaining ERD migrations with report-observation foreign keys.
-- [ ] Write a test that attempts to build a report from non-canonical observations and expects rejection.
-- [ ] Implement `GET /v1/vaults`, `POST /v1/reports`, `GET /v1/reports/:id`, and `POST /v1/policies/evaluate`.
-- [ ] Make report creation idempotent on canonical input hash + versions.
-- [ ] Validate every request and response against shared schemas.
-- [ ] Generate OpenAPI and fail CI on schema drift.
-- [ ] Run API integration tests against a fresh database.
-- [ ] Commit as `feat(tr4ce): expose immutable evidence api`.
+- [x] Implement the remaining ERD migrations with report-observation foreign keys.
+- [x] Write a test that attempts to build a report from non-canonical observations and expects rejection.
+- [x] Implement `GET /v1/vaults`, `POST /v1/reports`, `GET /v1/reports/:id`, and `POST /v1/policies/evaluate`.
+- [x] Make report creation idempotent on canonical input hash + versions.
+- [x] Validate every request and response against shared schemas.
+- [x] Generate OpenAPI and fail CI on schema drift.
+- [x] Run API integration tests against a fresh database.
+- [x] Commit as `feat(tr4ce): expose immutable evidence api`.
 
-Acceptance: Repeating a request over identical inputs returns the same report; HTTP output equals the domain schema exactly.
+> **Report identity.** `POST /v1/reports` is idempotent because `evidence_report.id` is derived
+> from the observations — `trc_` plus the first 32 hex of `canonical_input_hash`. Getting there
+> required a fix: `generatedAt` was inside the hashed surface, so two requests a second apart
+> produced two ids. It is no longer, and the API integration test proves the property by serving
+> the two requests from apps whose clocks are twelve hours apart.
+>
+> **Deviation from ERD section 6:** the id is content-derived rather than "sortable generated".
+> That makes "the same observations name the same report" true by construction instead of by a
+> lookup before every insert. Ordering is served by `created_at` and `as_of_block_number`, both
+> indexed, and `canonical_input_hash` remains a separate column with the unique index the ERD asks
+> for.
+>
+> **A short window still produces a report.** When the requested window reaches further back than
+> our index, the earliest observation we hold opens it. Refusing outright would discard evidence we
+> do have; instead the report states the spacing it actually measured, adds a limitation naming the
+> shortfall, and the history rule reports UNKNOWN — our coverage falling short, not the vault being
+> young. Nothing is quoted over a period it was not measured over.
+>
+> **`actions.ts` is not built.** It appears under **Files** above, but no checklist item calls for
+> it and Task 7 owns prepared and simulated actions. A stub route would have no behaviour to test.
+>
+> **`not_evaluated` is unreachable through this API.** The status exists because ERD section 6
+> defines it, but `evidenceReportV1Schema` requires a `policy` block, so an evidence-only report has
+> no wire shape to be served as. Every report this API produces carries an evaluation.
+
+Acceptance: Repeating a request over identical inputs returns the same report; HTTP output equals the domain schema exactly. Both verified: the API integration suite counts rows in `evidence_report` rather than comparing responses, and every response is parsed through its domain schema before it is served.
 
 ## Task 7: Prepare and simulate direct ERC-4626 actions
 
