@@ -106,6 +106,22 @@ importers:
         specifier: 24.10.1
         version: 24.10.1
 
+  packages/policy:
+    dependencies:
+      '@tr4ce/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@tr4ce/evidence':
+        specifier: workspace:*
+        version: link:../evidence
+      zod:
+        specifier: 4.5.4
+        version: 4.5.4
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+
   packages/test-vaults:
     dependencies:
       '@tr4ce/domain':
