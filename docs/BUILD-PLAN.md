@@ -132,7 +132,12 @@ Acceptance: The same module and output schema emit data for at least three verif
 > **Deviation from ERD section 6:** minimal `evidence_report`, `report_observation`, and an
 > append-only `reorg_invalidation` table ship in `0001_registry_observations.sql`, because
 > "invalidates every promoted dependent" cannot be demonstrated against tables that do not exist.
-> Task 6 extends these columns; it does not replace them.
+> Task 6 replaces both tables rather than extending them, correcting what this note originally
+> predicted: ERD section 6 types `evidence_report.id` as `text` and the report id is
+> `trc_<hex>`, so the primary key changes type. `0002_reports_and_policies.sql` drops and
+> recreates them behind a guard that refuses to run if either holds a row — both had only ever
+> been empty. `reorg_invalidation` survives unchanged apart from `subject_id` widening to
+> `text`, which it needs in order to keep naming an invalidated report.
 
 Acceptance: Normal reorgs are removed in staging before promotion; replay is idempotent; a detected deep reorg invalidates every promoted dependent.
 

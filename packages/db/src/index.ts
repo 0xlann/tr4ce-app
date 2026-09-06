@@ -7,6 +7,8 @@ export * from "./repositories/vaults.js";
 export * from "./schema/columns.js";
 export * from "./schema/cursors.js";
 export * from "./schema/observations.js";
+export * from "./schema/policies.js";
 export * from "./schema/raw.js";
 export * from "./schema/registry.js";
+export * from "./schema/reports.js";
 export * from "./testing.js";

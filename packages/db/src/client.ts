@@ -4,12 +4,16 @@ import postgres from "postgres";
 
 import * as cursorsSchema from "./schema/cursors.js";
 import * as observationsSchema from "./schema/observations.js";
+import * as policiesSchema from "./schema/policies.js";
 import * as rawSchema from "./schema/raw.js";
 import * as registrySchema from "./schema/registry.js";
+import * as reportsSchema from "./schema/reports.js";
 
 export const schema = {
   ...registrySchema,
   ...observationsSchema,
+  ...policiesSchema,
+  ...reportsSchema,
   ...cursorsSchema,
   ...rawSchema,
 };
