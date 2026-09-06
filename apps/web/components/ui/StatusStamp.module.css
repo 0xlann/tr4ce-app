@@ -1,0 +1,44 @@
+.stamp {
+  align-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: 8px;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  gap: 7px;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  padding: 7px 9px;
+  width: max-content;
+}
+
+.icon { display: inline-flex; }
+.icon svg { height: 12px; width: 12px; }
+
+.pass {
+  background: var(--green-wash);
+  box-shadow: 1.5px 1.5px 0 rgb(16 89 60 / 45%);
+  color: #0a5c33;
+}
+
+.fail {
+  background: var(--fail-wash);
+  box-shadow: 1.5px 1.5px 0 rgb(161 44 29 / 40%);
+  color: var(--fail-ink);
+}
+
+.unknown {
+  background: var(--peri-100);
+  box-shadow: 1.5px 1.5px 0 rgb(63 63 158 / 40%);
+  color: var(--peri-ink);
+}
+
+.feature {
+  font-size: 14px;
+  padding: 12px 14px;
+  transform: rotate(-2deg);
+}
+
+.feature .icon svg { height: 16px; width: 16px; }
