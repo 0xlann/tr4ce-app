@@ -172,12 +172,18 @@ log "step 5,7  capability probes at $HEAD and $HIST"
 
 # A zero from an owner that demonstrably holds shares is the signal that separates a documented
 # non-standard zero from an honest "this account has no position".
-OWNER_BALANCE=$(to_dec "$(try_call "$HEAD" 'balanceOf(address)' "$PROBE_OWNER")")
-HOLDS=false
-[[ -n $OWNER_BALANCE && $OWNER_BALANCE != 0 ]] && HOLDS=true
-
+#
+# The balance must be read at the block being probed, not at the head. The probe owner is found from
+# the vault's earliest Deposit, which is often *later* than the historical probe block -- at that
+# block they held nothing, and a zero capacity is simply the correct answer. Carrying a head balance
+# backwards labels that correct zero as a protocol quirk, which is a fabricated ambiguity.
 build_probes() {
   local block=$1
+  local owner_balance holds
+
+  owner_balance=$(to_dec "$(try_call "$block" 'balanceOf(address)' "$PROBE_OWNER")")
+  holds=false
+  [[ -n $owner_balance && $owner_balance != 0 ]] && holds=true
 
   jq -s '.' \
     <(probe asset           "$block" "$(try_call "$block" 'asset()')") \
@@ -185,8 +191,8 @@ build_probes() {
     <(probe totalAssets     "$block" "$(try_call "$block" 'totalAssets()')") \
     <(probe totalSupply     "$block" "$(try_call "$block" 'totalSupply()')") \
     <(probe convertToAssets "$block" "$(try_call "$block" 'convertToAssets(uint256)' "$ONE_SHARE")") \
-    <(probe maxWithdraw     "$block" "$(try_call "$block" 'maxWithdraw(address)' "$PROBE_OWNER")" "$HOLDS") \
-    <(probe maxRedeem       "$block" "$(try_call "$block" 'maxRedeem(address)' "$PROBE_OWNER")" "$HOLDS") \
+    <(probe maxWithdraw     "$block" "$(try_call "$block" 'maxWithdraw(address)' "$PROBE_OWNER")" "$holds") \
+    <(probe maxRedeem       "$block" "$(try_call "$block" 'maxRedeem(address)' "$PROBE_OWNER")" "$holds") \
     <(probe previewDeposit  "$block" "$(try_call "$block" 'previewDeposit(uint256)' 1000000)") \
     <(probe previewRedeem   "$block" "$(try_call "$block" 'previewRedeem(uint256)' "$ONE_SHARE")")
 }
