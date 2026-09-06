@@ -1,5 +1,27 @@
-.banner { align-items: center; border-bottom: 1px solid var(--tr4ce-line); display: flex; font-size: 13px; gap: 8px; justify-content: center; margin: 0; min-height: 38px; padding: 8px 20px; text-align: center; }
-.fresh { background: var(--tr4ce-brand-50); color: var(--tr4ce-ink-800); }
-.refreshing { background: #eff6ff; color: #1e4f8f; }
-.stale, .partial { background: #fff5e5; color: #754400; }
-.reorged { background: #fff0ee; color: #8a1710; }
+.banner {
+  align-items: center;
+  border-bottom: 1px dashed var(--ink-hairline);
+  color: var(--ink-soft);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: 9px;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  margin: 0;
+  min-height: 38px;
+  padding: 8px 20px;
+  text-align: center;
+}
+
+.dot { border-radius: 50%; flex: 0 0 auto; height: 7px; width: 7px; }
+
+.fresh .dot { background: var(--green-leaf); }
+.refreshing .dot { animation: pulse 1.6s var(--ease-out) infinite; background: var(--peri-500); }
+.stale .dot, .partial .dot { background: var(--tan-400); }
+.reorged .dot { background: var(--fail-ink); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { LogoLockup } from "./LogoLockup";
 import styles from "./SiteChrome.module.css";
@@ -11,13 +14,29 @@ const routes = [
 ] as const;
 
 export function SiteHeader() {
+  const pathname = usePathname();
+
   return (
-    <header className={styles.header}>
-      <Link aria-label="TR4CE home" href="/"><LogoLockup /></Link>
-      <nav className={styles.nav} aria-label="Primary navigation">
-        {routes.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
-      </nav>
-      <Link className={styles.headerAction} href="/search">Explore evidence</Link>
-    </header>
+    <div className={styles.headerDock}>
+      <header className={styles.header}>
+        <Link aria-label="TR4CE home" className={styles.brand} href="/">
+          <LogoLockup />
+        </Link>
+        <nav aria-label="Primary navigation" className={styles.nav}>
+          {routes.map(([label, href]) => {
+            const section = `/${href.split("/")[1]}`;
+            const active = pathname === href || pathname.startsWith(`${section}/`) || pathname === section;
+            return (
+              <Link aria-current={active ? "page" : undefined} className={active ? styles.navActive : undefined} key={href} href={href}>
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+        <Link className={`${styles.headerAction} pill pillGreen pillSmall`} href="/search">
+          Explore evidence
+        </Link>
+      </header>
+    </div>
   );
 }

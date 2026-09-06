@@ -1,18 +1,22 @@
+import type { ReactNode } from "react";
+
 import styles from "./SectionHeading.module.css";
 
 type SectionHeadingProps = {
-  eyebrow: string;
-  title: string;
-  detail?: string;
+  title: ReactNode;
+  detail?: ReactNode;
+  aside?: ReactNode;
   align?: "start" | "center";
 };
 
-export function SectionHeading({ eyebrow, title, detail, align = "start" }: SectionHeadingProps) {
+export function SectionHeading({ title, detail, aside, align = "start" }: SectionHeadingProps) {
   return (
     <header className={`${styles.heading} ${styles[align]}`}>
-      <p className={styles.eyebrow}>{eyebrow}</p>
-      <h1>{title}</h1>
-      {detail ? <p className={styles.detail}>{detail}</p> : null}
+      <div className={styles.row}>
+        <h1 className={`display ${styles.title}`}>{title}</h1>
+        {aside ? <div className={styles.aside}>{aside}</div> : null}
+      </div>
+      {detail ? <p className={`lede ${styles.detail}`}>{detail}</p> : null}
     </header>
   );
 }

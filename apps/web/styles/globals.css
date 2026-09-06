@@ -1,77 +1,280 @@
+/* ------------------------------------------------------------------ */
+/*  TR4CE — "The Evidence Ledger"                                      */
+/*  Warm paper, deep-green identity, drawn linework, typed verdicts.   */
+/* ------------------------------------------------------------------ */
+
 :root {
-  --tr4ce-brand-50: #eef7f2;
-  --tr4ce-brand-100: #d8ecdf;
-  --tr4ce-brand-300: #82b49a;
-  --tr4ce-brand-500: #167653;
-  --tr4ce-brand-700: #035535;
-  --tr4ce-brand-800: #01452c;
-  --tr4ce-brand-900: #0b2f22;
-  --tr4ce-cream-50: #fffaf2;
-  --tr4ce-cream-100: #fdf3e5;
-  --tr4ce-cream-200: #f5e6d3;
-  --tr4ce-ink-950: #101814;
-  --tr4ce-ink-800: #27332d;
-  --tr4ce-ink-600: #526159;
-  --tr4ce-ink-400: #66736c;
-  --tr4ce-line: #c7d0ca;
-  --tr4ce-surface: #ffffff;
-  --tr4ce-info: #2563eb;
-  --tr4ce-success: #137a45;
-  --tr4ce-warning: #a15c00;
-  --tr4ce-danger: #b42318;
-  --tr4ce-unknown: #6b5aa6;
-  --font-display: "Space Grotesk", Inter, system-ui, sans-serif;
+  /* Paper */
+  --paper: #f5efe2;
+  --paper-raised: #fcf8ef;
+  --paper-dim: #ece3d0;
+
+  /* Ink */
+  --ink: #13221a;
+  --ink-soft: #3d4f44;
+  --ink-mute: #5c6b61;
+  --ink-faint: rgb(19 34 26 / 14%);
+  --ink-hairline: rgb(19 34 26 / 18%);
+
+  /* Brand greens */
+  --green-deep: #0c4630;
+  --green-core: #10593c;
+  --green-leaf: #1fae5b;
+  --green-bright: #35d06f;
+  --green-wash: #e3f3e8;
+
+  /* Signals */
+  --peri-100: #ececfb;
+  --peri-300: #b9baf5;
+  --peri-500: #8f90ee;
+  --peri-ink: #3f3f9e;
+  --fail-wash: #fbe9e4;
+  --fail-ink: #a12c1d;
+  --tan-200: #e7dcc2;
+  --tan-400: #c9b893;
+  --tan-ink: #5c4d26;
+
+  /* Chrome */
+  --black-panel: #101a14;
+  --cream-on-black: #f2ecdd;
+
+  /* Type */
+  --font-display: "Bricolage Grotesque", "Space Grotesk", Inter, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --ease-out: cubic-bezier(.2, 0, 0, 1);
-  --ease-spring: cubic-bezier(.16, 1, .3, 1);
-  --dur-fast: 140ms;
-  --dur-state: 200ms;
-  --dur-reveal: 480ms;
-  --shadow-float: 0 16px 40px rgb(16 24 20 / 12%);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.6, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-med: 280ms;
+  --dur-reveal: 700ms;
+
+  /* Depth */
+  --shadow-card: 0 1px 0 rgb(19 34 26 / 4%), 0 20px 44px -30px rgb(19 34 26 / 42%);
+  --shadow-lift: 0 2px 0 rgb(19 34 26 / 5%), 0 30px 60px -30px rgb(19 34 26 / 5 0%);
+  --offset-hard: 3px 3px 0 var(--ink);
+  --radius-card: 20px;
+  --radius-soft: 14px;
 }
 
 * { box-sizing: border-box; }
 
 html {
-  background: var(--tr4ce-cream-100);
+  background: var(--paper);
+  overflow-x: clip;
   scroll-behavior: smooth;
-  scroll-padding-top: 88px;
+  scroll-padding-top: 108px;
 }
 
 body {
-  background: var(--tr4ce-cream-100);
-  color: var(--tr4ce-ink-950);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-button,
-input,
-select,
-textarea { font: inherit; }
-
-button,
-a,
-summary,
-select,
-input,
-textarea { -webkit-tap-highlight-color: transparent; }
-
+button, input, select, textarea { font: inherit; }
+button, a, summary, select, input, textarea { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
-
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-
 img { max-width: 100%; }
+strong { font-weight: 650; }
+code { font-family: var(--font-mono); font-size: 0.92em; }
+
+::selection { background: var(--green-bright); color: var(--ink); }
 
 :focus-visible {
-  outline: 2px solid var(--tr4ce-brand-500);
+  outline: 2.5px solid var(--green-core);
   outline-offset: 3px;
+  border-radius: 4px;
 }
 
-::selection { background: var(--tr4ce-brand-100); color: var(--tr4ce-brand-900); }
+/* Browser chrome belongs to the world */
+html { color-scheme: light; }
+body { caret-color: var(--green-core); }
+
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--paper); }
+::-webkit-scrollbar-thumb {
+  background: var(--ink-hairline);
+  border: 3px solid var(--paper);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-mute); }
+
+/* ---------------- Layout shells ---------------- */
+
+.shell {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 0 clamp(20px, 4.5vw, 56px);
+}
+
+.pageLead {
+  padding: clamp(56px, 9vh, 104px) 0 0;
+}
+
+/* ---------------- Type primitives ---------------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.display em, .serifAccent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.lede {
+  color: var(--ink-soft);
+  font-size: clamp(16px, 1.4vw, 19px);
+  line-height: 1.65;
+  max-width: 58ch;
+  text-wrap: pretty;
+}
+
+.monoLabel {
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Micro-label used *inside instruments and data* — not as a heading kicker. */
+
+/* ---------------- Buttons ---------------- */
+
+.pill {
+  align-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 620;
+  gap: 8px;
+  line-height: 1;
+  padding: 14px 22px;
+  position: relative;
+  text-decoration: none;
+  transition:
+    box-shadow var(--dur-fast) var(--ease-snap),
+    transform var(--dur-fast) var(--ease-snap),
+    background var(--dur-fast) var(--ease-snap);
+  will-change: transform;
+}
+
+.pillGreen {
+  background: var(--green-bright);
+  box-shadow: var(--offset-hard);
+  color: var(--ink);
+}
+
+.pillGreen:hover {
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+  transform: translate(1.5px, 1.5px);
+}
+
+.pillGreen:active {
+  box-shadow: 0 0 0 var(--ink);
+  transform: translate(3px, 3px);
+}
+
+.pillGhost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.pillGhost:hover { background: var(--paper-raised); }
+
+.pillGhost:active { transform: translateY(1px); }
+
+.pillDark {
+  background: var(--black-panel);
+  box-shadow: 3px 3px 0 rgb(19 34 26 / 25%);
+  color: var(--cream-on-black);
+}
+
+.pillDark:hover { background: #1b2920; transform: translateY(-1px); }
+
+.pillSmall { font-size: 13.5px; padding: 10px 16px; }
+
+/* ---------------- Panels & cards ---------------- */
+
+.cardPanel {
+  background: var(--paper-raised);
+  border: 1px solid var(--ink-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.periPanel {
+  background: linear-gradient(178deg, var(--peri-100) 0%, #e0e0f9 100%);
+  border: 1px solid rgb(63 63 158 / 28%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.blackPanel {
+  background: var(--black-panel);
+  border-radius: 28px;
+  color: var(--cream-on-black);
+}
+
+/* ---------------- Drawn linework ---------------- */
+
+.drawLine {
+  stroke-dasharray: var(--dash, 1200);
+  stroke-dashoffset: var(--dash, 1200);
+}
+
+.isDrawn .drawLine {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.4s var(--ease-out);
+}
+
+/* Staggered draw for multi-segment linework */
+.isDrawn .drawLine:nth-of-type(2) { transition-delay: 0.35s; }
+.isDrawn .drawLine:nth-of-type(3) { transition-delay: 0.7s; }
+
+/* ---------------- Reveal choreography ---------------- */
+
+/* Applied by the motion script before animating; no-JS users see everything. */
+html.gsapRunning [data-reveal] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.gsapRunning [data-reveal] { opacity: 1; }
+  .drawLine { stroke-dasharray: none; stroke-dashoffset: 0; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---------------- Utilities ---------------- */
 
 .srOnly {
   clip: rect(0, 0, 0, 0);
@@ -84,11 +287,12 @@ img { max-width: 100%; }
 }
 
 .skipLink {
-  background: var(--tr4ce-brand-700);
-  border-radius: 0 0 8px 8px;
-  color: white;
+  background: var(--green-deep);
+  border-radius: 0 0 10px 10px;
+  color: #fff;
+  font-weight: 600;
   left: 16px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   position: fixed;
   top: -64px;
   transition: top var(--dur-fast) var(--ease-out);
@@ -97,40 +301,6 @@ img { max-width: 100%; }
 
 .skipLink:focus { top: 0; }
 
-.specimenFrame {
-  position: relative;
-}
+.num { font-variant-numeric: tabular-nums; }
 
-.specimenFrame::before,
-.specimenFrame::after {
-  border-color: var(--tr4ce-brand-700);
-  border-style: solid;
-  content: "";
-  height: 10px;
-  pointer-events: none;
-  position: absolute;
-  width: 10px;
-}
-
-.specimenFrame::before {
-  border-width: 1px 0 0 1px;
-  left: -5px;
-  top: -5px;
-}
-
-.specimenFrame::after {
-  border-width: 0 1px 1px 0;
-  bottom: -5px;
-  right: -5px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 1ms !important;
-  }
-}
+.hairline { border: 0; border-top: 1px dashed var(--ink-hairline); margin: 0; }

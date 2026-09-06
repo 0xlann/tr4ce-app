@@ -99,7 +99,7 @@ function report(
       shareValue: {
         oneShareBaseUnits: "1000000000000000000",
         assetsNow: "1052300",
-        assetsAtStart: "1041000",
+        assetsAtStart: "1048000",
         windowDays: 7,
         returnBps: options.returnBps,
       },

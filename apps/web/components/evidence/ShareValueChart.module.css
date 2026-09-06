@@ -1,12 +1,40 @@
-.chart { border: 1px solid var(--tr4ce-line); margin: 0; padding: 22px; }
-.chart figcaption { display: flex; justify-content: space-between; margin-bottom: 20px; }
-.chart figcaption span { font-family: var(--font-display); font-size: 18px; letter-spacing: -.03em; }
-.chart figcaption small { color: var(--tr4ce-ink-600); font-family: var(--font-mono); font-size: 11px; max-width: 160px; text-align: right; }
+.chart {
+  background: var(--paper-raised);
+  border: 1px solid var(--ink-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  margin: 0;
+  padding: clamp(20px, 2.4vw, 30px);
+}
+
+.chart figcaption { align-items: baseline; display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; margin-bottom: 22px; }
+
+.chart figcaption span { font-family: var(--font-display); font-size: 18px; font-weight: 730; letter-spacing: -0.02em; }
+
+.chart figcaption small { color: var(--ink-mute); font-family: var(--font-mono); font-size: 11px; max-width: 200px; text-align: right; }
+
 .chart svg { display: block; height: auto; overflow: visible; width: 100%; }
-.grid { fill: none; stroke: var(--tr4ce-line); stroke-width: 1; }
-.line { fill: none; stroke: var(--tr4ce-brand-700); stroke-width: 3; }
-.chart circle { fill: var(--tr4ce-brand-700); }
-.chart table { border-collapse: collapse; margin-top: 18px; width: 100%; }
-.chart th, .chart td { border-top: 1px solid var(--tr4ce-line); font-family: var(--font-mono); font-size: 10px; padding: 8px 4px; text-align: center; }
-.chart th { color: var(--tr4ce-ink-600); }
-@media (max-width: 520px) { .chart figcaption { display: grid; gap: 6px; } .chart figcaption small { text-align: left; } .chart th, .chart td { font-size: 8px; } }
+
+.grid { fill: none; stroke: var(--ink-hairline); stroke-dasharray: 3 6; stroke-width: 1; }
+
+.line { fill: none; stroke: var(--green-core); stroke-linecap: round; stroke-width: 2.6; }
+
+.chart circle { fill: var(--green-bright); stroke: var(--ink); stroke-width: 1.5; }
+
+.chart table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+
+.chart th, .chart td {
+  border-top: 1px dashed var(--ink-hairline);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.chart th { color: var(--ink-mute); }
+
+@media (max-width: 520px) {
+  .chart figcaption { display: grid; gap: 6px; }
+  .chart figcaption small { text-align: left; }
+  .chart th, .chart td { font-size: 8px; }
+}

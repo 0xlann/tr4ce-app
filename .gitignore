@@ -16,3 +16,7 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# QA render artifacts
+reference/shots/
+reference/frames/

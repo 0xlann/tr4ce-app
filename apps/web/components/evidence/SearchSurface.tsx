@@ -7,7 +7,6 @@ import { formatUsdc, formatUsdcMillions } from "../../src/demo/display";
 import { getPolicyPreset, getVaultSummaries } from "../../src/demo/fixtures";
 import type { PolicyPreset } from "../../src/demo/types";
 import { DataStateBanner } from "../ui/DataStateBanner";
-import { SectionHeading } from "../ui/SectionHeading";
 import { SiteFooter } from "../ui/SiteFooter";
 import { SiteHeader } from "../ui/SiteHeader";
 import { StatusStamp } from "../ui/StatusStamp";
@@ -26,43 +25,144 @@ export function SearchSurface() {
     <>
       <SiteHeader />
       <DataStateBanner />
-      <main id="main-content" className={styles.main}>
-        <SectionHeading eyebrow="CURATED USDC EVIDENCE" title="Compare the policy. Then inspect the trace." detail="Illustrative fixtures use verified Base vault identities. No wallet or live provider is connected." />
-        <section className={styles.layout}>
-          <aside className={`${styles.policy} specimenFrame`}>
-            <p className={styles.eyebrow}>POLICY v{policy.version}</p>
-            <h2>Evidence check</h2>
-            <div className={styles.presets}>{presets.map((item) => <button aria-pressed={preset === item} className={preset === item ? styles.activePreset : ""} key={item} onClick={() => setPreset(item)} type="button">{item}</button>)}</div>
-            <dl>
-              <div><dt>Asset</dt><dd>USDC</dd></div>
-              <div><dt>Minimum history</dt><dd>{policy.minHistoryDays} days</dd></div>
-              <div><dt>Minimum TVL</dt><dd>{formatUsdcMillions(policy.minTvlAssets)}</dd></div>
-              <div><dt>Return window</dt><dd>{policy.minObservedReturnBps.windowDays} days</dd></div>
-              <div><dt>Withdrawal floor</dt><dd>{formatUsdc(policy.minWithdrawableAssets.value)}</dd></div>
-            </dl>
-            <button className={styles.usePolicy} type="button">Use this policy</button>
-          </aside>
-          <div className={styles.results}>
-            <div className={styles.summary}>
-              <div><strong>{vaults.filter((vault) => vault.report.policy.status === "PASS").length}</strong><span>passing</span></div>
-              <div><strong>{vaults.filter((vault) => vault.report.policy.status === "FAIL").length}</strong><span>failing</span></div>
-              <div><strong>{vaults.filter((vault) => vault.report.policy.status === "UNKNOWN").length}</strong><span>unknown</span></div>
-              <p>Sorted by policy, completeness, then name.</p>
+      <main id="main-content">
+        <header className={`shell ${styles.lead}`}>
+          <h1 className={`display ${styles.leadTitle}`} data-reveal>
+            Compare the policy. <em className="serifAccent">Then inspect the trace.</em>
+          </h1>
+          <p className="lede" data-reveal data-reveal-delay="0.1">
+            Curated USDC evidence on verified Base vault identities. The same typed five-rule policy
+            drives every verdict — switch it and watch each verdict follow.
+          </p>
+        </header>
+
+        <div className={`shell ${styles.layout}`}>
+          <aside aria-label="Policy configuration" className={styles.policyCol}>
+            <div className={`periPanel ${styles.policy}`} data-reveal>
+              <div className={styles.policyHead}>
+                <p className={styles.policyName}>{preset}</p>
+                <span className={styles.version}>v{policy.version}</span>
+              </div>
+              <div aria-label="Policy preset" className={styles.presets} role="group">
+                {presets.map((item) => (
+                  <button
+                    aria-pressed={preset === item}
+                    className={preset === item ? styles.activePreset : styles.preset}
+                    key={item}
+                    onClick={() => setPreset(item)}
+                    type="button"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <dl className={styles.ruleList}>
+                <div><dt>Underlying asset</dt><dd>USDC</dd></div>
+                <div><dt>Minimum history</dt><dd className="num">{policy.minHistoryDays} days</dd></div>
+                <div><dt>Minimum TVL</dt><dd className="num">{formatUsdcMillions(policy.minTvlAssets)}</dd></div>
+                <div><dt>Return window</dt><dd className="num">{policy.minObservedReturnBps.windowDays} days</dd></div>
+                <div><dt>Withdrawal floor</dt><dd className="num">{formatUsdc(policy.minWithdrawableAssets.value)}</dd></div>
+              </dl>
+              <button className="pill pillGreen pillSmall" type="button">Use this policy</button>
+              <p className={styles.policyNote}>Illustrative preset — the hosted API wires this to live evidence.</p>
             </div>
-            <div className={styles.tableWrap}>
-              <table>
-                <caption>Illustrative policy results at Base block 50,879,897</caption>
-                <thead><tr><th>Vault</th><th>Policy</th><th>Complete</th><th>Observed return</th><th>TVL</th><th>Withdrawal</th><th><span className="srOnly">Report</span></th></tr></thead>
-                <tbody>{vaults.map((vault) => <tr key={vault.id}><th scope="row"><strong>{vault.name}</strong><span>{vault.network} · {vault.protocol}</span><code>{vault.address}</code></th><td><StatusStamp reason={vault.report.policy.rules.find((rule) => rule.status !== "PASS")?.reasonCodes[0] ?? "All five illustrative policy rules passed."} status={vault.report.policy.status} /></td><td>{vault.completeness}%</td><td>{vault.report.observations.shareValue.returnBps >= 0 ? "+" : ""}{(vault.report.observations.shareValue.returnBps / 100).toFixed(2)}%<small>{vault.report.observations.shareValue.windowDays} days</small></td><td>{formatUsdcMillions(vault.report.observations.totalAssets)}</td><td>{vault.report.observations.maxWithdrawAssets === null ? "Unavailable" : formatUsdc(vault.report.observations.maxWithdrawAssets)}</td><td><Link href={`/reports/${vault.id}`}>Inspect</Link></td></tr>)}</tbody>
+          </aside>
+
+          <section aria-label="Policy results" className={styles.results}>
+            <div className={styles.summary} data-reveal>
+              <div className={styles.summaryItem}>
+                <strong className="num">{vaults.filter((vault) => vault.report.policy.status === "PASS").length}</strong>
+                <span>passing</span>
+              </div>
+              <div className={styles.summaryItem}>
+                <strong className="num">{vaults.filter((vault) => vault.report.policy.status === "FAIL").length}</strong>
+                <span>failing</span>
+              </div>
+              <div className={styles.summaryItem}>
+                <strong className="num">{vaults.filter((vault) => vault.report.policy.status === "UNKNOWN").length}</strong>
+                <span>unknown</span>
+              </div>
+              <p className={styles.summaryNote}>Illustrative results at Base block <span className="num">50,879,897</span>. Sorted by policy, completeness, then name.</p>
+            </div>
+
+            <div className={`cardPanel ${styles.tableCard}`} data-reveal data-reveal-delay="0.08">
+              <p aria-hidden="true" className={styles.scrollHint}>Swipe the ledger sideways for every column</p>
+              <table className={styles.table}>
+                <caption className="srOnly">Illustrative policy results at Base block 50,879,897</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Vault</th>
+                    <th scope="col">Verdict</th>
+                    <th scope="col" className={styles.right}>Observed return</th>
+                    <th scope="col" className={styles.right}>TVL</th>
+                    <th scope="col" className={styles.right}>Withdrawal</th>
+                    <th scope="col"><span className="srOnly">Report</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vaults.map((vault) => (
+                    <tr key={vault.id}>
+                      <th scope="row">
+                        <span className={styles.vaultName}>{vault.name}</span>
+                        <span className={styles.vaultMeta}>{vault.network} · {vault.protocol}</span>
+                        <code className={styles.vaultAddress}>{vault.address}</code>
+                      </th>
+                      <td>
+                        <StatusStamp
+                          reason={vault.report.policy.rules.find((rule) => rule.status !== "PASS")?.reasonCodes[0] ?? "All five illustrative policy rules passed."}
+                          status={vault.report.policy.status}
+                        />
+                      </td>
+                      <td className={`num ${styles.right}`}>
+                        <strong className={vault.report.observations.shareValue.returnBps >= 0 ? styles.up : styles.down}>
+                          {vault.report.observations.shareValue.returnBps >= 0 ? "+" : ""}{(vault.report.observations.shareValue.returnBps / 100).toFixed(2)}%
+                        </strong>
+                        <small>{vault.report.observations.shareValue.windowDays} days</small>
+                      </td>
+                      <td className={`num ${styles.right}`}>{formatUsdcMillions(vault.report.observations.totalAssets)}</td>
+                      <td className={`num ${styles.right}`}>
+                        {vault.report.observations.maxWithdrawAssets === null
+                          ? <span className={styles.unavailable}>Unavailable</span>
+                          : formatUsdc(vault.report.observations.maxWithdrawAssets)}
+                      </td>
+                      <td>
+                        <Link className={styles.inspect} href={`/reports/${vault.id}`}>
+                          Inspect
+                          <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 16 16"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" /></svg>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
-            <section className={styles.addressCheck}>
-              <label htmlFor="vault-address">Check one address</label>
-              <div><input id="vault-address" onChange={(event) => setAddress(event.target.value)} placeholder="0x..." value={address} /><button type="button">Check address</button></div>
-              {address.length > 0 ? <p>Illustrative diagnostics only. Connect the API after Task 6 to verify an entered address.</p> : null}
+
+            <section className={`cardPanel ${styles.addressCheck}`} data-reveal>
+              <div className={styles.addressCopy}>
+                <h2 className={styles.addressTitle}>Check one address</h2>
+                <p>Enter a USDC vault on Base. Diagnostics stay illustrative until the API is connected.</p>
+              </div>
+              <form className={styles.addressForm} onSubmit={(event) => event.preventDefault()}>
+                <label className="srOnly" htmlFor="vault-address">Vault address</label>
+                <input
+                  id="vault-address"
+                  className={styles.addressInput}
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder="0x…"
+                  spellCheck={false}
+                  value={address}
+                />
+                <button className="pill pillGreen pillSmall" type="submit">Check address</button>
+              </form>
+              {address.length > 0 ? (
+                <p className={styles.addressNote} role="status">
+                  Illustrative diagnostics only — the hosted API will verify{" "}
+                  <code>{address}</code>.
+                </p>
+              ) : null}
             </section>
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
       <SiteFooter />
     </>

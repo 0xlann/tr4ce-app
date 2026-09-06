@@ -11,5 +11,10 @@ const copy: Record<DataState, string> = {
 };
 
 export function DataStateBanner({ state = "fresh" }: { state?: DataState }) {
-  return <p className={`${styles.banner} ${styles[state]}`}><span aria-hidden="true">●</span>{copy[state]}</p>;
+  return (
+    <p className={`${styles.banner} ${styles[state]}`} role="status">
+      <span aria-hidden="true" className={styles.dot} />
+      {copy[state]}
+    </p>
+  );
 }

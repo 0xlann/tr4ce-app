@@ -19,7 +19,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     <>
       <SiteHeader />
       <DataStateBanner />
-      <main id="main-content" style={{ margin: "0 auto", maxWidth: 1020, padding: "72px 20px 112px" }}>
+      <main id="main-content" className="shell" style={{ paddingBottom: "clamp(72px, 10vh, 120px)", paddingTop: "clamp(48px, 8vh, 88px)" }}>
         <ReportDossier name={vault.name} protocol={vault.protocol} report={vault.report} />
       </main>
       <SiteFooter />

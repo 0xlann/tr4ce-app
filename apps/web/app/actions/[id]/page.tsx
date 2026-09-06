@@ -14,5 +14,13 @@ export default async function ActionPage({ params }: { params: Promise<{ id: str
   const action = getPreparedAction(id);
   if (!action) notFound();
 
-  return <><SiteHeader /><main id="main-content" style={{ margin: "0 auto", maxWidth: 1120, padding: "72px 20px 112px" }}><ActionConsole action={action} /></main><SiteFooter /></>;
+  return (
+    <>
+      <SiteHeader />
+      <main id="main-content" className="shell" style={{ paddingBottom: "clamp(72px, 10vh, 120px)", paddingTop: "clamp(48px, 8vh, 88px)" }}>
+        <ActionConsole action={action} />
+      </main>
+      <SiteFooter />
+    </>
+  );
 }

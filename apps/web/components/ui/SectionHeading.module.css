@@ -1,6 +1,26 @@
-.heading { max-width: 760px; }
-.center { margin-inline: auto; text-align: center; }
-.eyebrow { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .08em; margin: 0 0 14px; text-transform: uppercase; }
-.heading h1 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: -.045em; line-height: 1.03; margin: 0; }
-.detail { color: var(--tr4ce-ink-600); font-size: 17px; line-height: 1.6; margin: 20px 0 0; max-width: 620px; }
+.heading { display: grid; gap: 18px; max-width: 780px; }
+
+.center {
+  justify-items: center;
+  text-align: center;
+}
+
 .center .detail { margin-inline: auto; }
+
+.row {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: clamp(30px, 4.2vw, 52px);
+}
+
+.title em { font-size: 1.04em; }
+
+.aside { padding-bottom: 6px; }
+
+.detail { margin: 0; }

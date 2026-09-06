@@ -1,20 +1,25 @@
 .lockup {
   align-items: center;
   display: inline-flex;
-  gap: 10px;
+  gap: 11px;
   min-height: 44px;
 }
 
 .icon {
+  background: var(--paper-raised);
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  box-shadow: 2.5px 2.5px 0 var(--ink);
   display: block;
-  height: 30px;
+  height: 40px;
   object-fit: contain;
-  width: 30px;
+  padding: 4px;
+  width: 40px;
 }
 
 .wordmark {
   display: block;
-  height: 19px;
+  height: 15px;
   object-fit: contain;
   width: auto;
 }
@@ -25,6 +30,22 @@
 }
 
 .compact .icon {
-  height: 28px;
-  width: 28px;
+  height: 36px;
+  width: 36px;
+}
+
+/* Dark surfaces: keep the original mark colors by backing them with cream. */
+
+.onDark .icon {
+  background: var(--paper-raised);
+  border: none;
+  box-shadow: none;
+}
+
+.onDark .wordmark {
+  background: var(--paper-raised);
+  border-radius: 6px;
+  height: 22px;
+  padding: 4px 6px;
+  width: auto;
 }
