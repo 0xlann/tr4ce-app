@@ -317,6 +317,40 @@ describe.skipIf(url === undefined)("evidence API", () => {
       expect(history.reasonCodes).toContain("MISSING_OBSERVATION");
     });
 
+    it("does not open and close the window on one snapshot", async () => {
+      /*
+       * The cursor can run far ahead of a vault's newest snapshot — snapshots are written where the
+       * chain gave us one, the cursor advances over every promoted block. When the estimated start
+       * lands above the newest snapshot, both ends of the window resolve to the same row.
+       *
+       * That is two failures at once: a return quoted over zero elapsed time, and two citations
+       * deriving the same primary key, which takes the whole insert down with a duplicate key.
+       */
+      await seedObservations();
+
+      await db.transaction((tx) =>
+        writeApplicationCursor(tx, {
+          chainId: CHAIN_ID,
+          streamKey: STREAM_KEY,
+          // Well past the newest snapshot, so a one-day lookback still lands above it.
+          blockNumber: END_BLOCK + 500_000,
+          blockHash: hash("3"),
+          schemaVersion: SCHEMA_VERSION,
+        }),
+      );
+
+      const response = await app.request("/v1/reports", request(1));
+      const payload = await response.json();
+
+      expect(response.status).toBe(201);
+
+      const [start, end] = payload.report.provenance
+        .filter((entry: { reference: string }) => entry.reference.startsWith("vault_snapshot"))
+        .map((entry: { blockNumber: string }) => entry.blockNumber);
+
+      expect(start).not.toBe(end);
+    });
+
     it("answers 404 for an address the registry has never heard of", async () => {
       const response = await app.request(
         "/v1/reports",

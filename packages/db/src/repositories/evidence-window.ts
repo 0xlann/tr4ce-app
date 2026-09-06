@@ -95,12 +95,20 @@ export async function readObservationWindow(
     return { end: null, start: null, startIsEarliestAvailable: false, flows: [], capability: null };
   }
 
+  /*
+   * The opening snapshot has to be strictly below the closing one.
+   *
+   * Not a theoretical concern: the cursor advances over every promoted block while snapshots are
+   * written only where the chain gave us one, so the estimated start can land above a vault's
+   * newest snapshot and both ends resolve to the same row. That would quote a return measured over
+   * zero elapsed time, and the report's two citations would derive one primary key and take the
+   * insert down with them.
+   */
   const requested = await latestSnapshotAtOrBelow(tx, vaultId, startBlock);
-  // Strictly below the end block: a "start" that is the end snapshot would measure a zero-length
-  // window and quote a return computed over no elapsed time at all.
-  const start =
-    requested ?? (await earliestSnapshotBelow(tx, vaultId, end.blockNumber));
-  const startIsEarliestAvailable = requested === null && start !== null;
+  const usable =
+    requested !== null && BigInt(requested.blockNumber) < BigInt(end.blockNumber) ? requested : null;
+  const start = usable ?? (await earliestSnapshotBelow(tx, vaultId, end.blockNumber));
+  const startIsEarliestAvailable = usable === null && start !== null;
 
   const flowRows = await tx
     .select({

@@ -44,6 +44,9 @@ importers:
       hono:
         specifier: 4.7.10
         version: 4.7.10
+      zod:
+        specifier: 4.5.4
+        version: 4.5.4
     devDependencies:
       '@tr4ce/test-vaults':
         specifier: workspace:*
@@ -54,9 +57,6 @@ importers:
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(postgres@3.4.9)
-      zod:
-        specifier: 4.5.4
-        version: 4.5.4
 
   apps/web:
     dependencies:

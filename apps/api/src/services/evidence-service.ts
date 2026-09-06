@@ -9,7 +9,13 @@ import {
   type Database,
   type ReportCitation,
 } from "@tr4ce/db";
-import type { PolicyRuleKey, PolicyV1, ReportStatus } from "@tr4ce/domain";
+import { reportStatusSchema } from "@tr4ce/domain";
+import type {
+  PolicyRuleKey,
+  PolicyRuleStatus,
+  PolicyV1,
+  ReportStatus,
+} from "@tr4ce/domain";
 import {
   attachPolicy,
   buildEvidence,
@@ -333,8 +339,15 @@ function toFlowRow(row: {
   };
 }
 
-function statusOf(status: "PASS" | "FAIL" | "UNKNOWN"): ReportStatus {
-  return status.toLowerCase() as ReportStatus;
+/**
+ * The overall verdict in its stored spelling.
+ *
+ * Parsed rather than cast, matching `persistedRuleStatus` one layer down: a cast would keep
+ * compiling if the wire enum gained a value the column's CHECK does not allow, and the failure
+ * would surface as a constraint violation on insert instead of here.
+ */
+function statusOf(status: PolicyRuleStatus): ReportStatus {
+  return reportStatusSchema.parse(status.toLowerCase());
 }
 
 function thresholdsOf(policy: PolicyV1): Record<PolicyRuleKey, unknown> {
