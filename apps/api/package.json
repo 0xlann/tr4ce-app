@@ -1,0 +1,28 @@
+{
+  "name": "@tr4ce/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "start": "node --env-file-if-exists=../../.env dist/server.js",
+    "openapi": "tsc && node scripts/write-openapi.mjs"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.14.1",
+    "@tr4ce/chain": "workspace:*",
+    "@tr4ce/db": "workspace:*",
+    "@tr4ce/domain": "workspace:*",
+    "@tr4ce/evidence": "workspace:*",
+    "@tr4ce/policy": "workspace:*",
+    "hono": "4.7.10",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@tr4ce/test-vaults": "workspace:*",
+    "@types/node": "24.10.1",
+    "drizzle-orm": "0.45.2"
+  }
+}

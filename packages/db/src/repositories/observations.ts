@@ -4,13 +4,8 @@ import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { Executor } from "../client.js";
 import { reorgInvalidationId, vaultFlowId, vaultSnapshotId } from "../ids.js";
 import { hexToBytes } from "../schema/columns.js";
-import {
-  evidenceReport,
-  reorgInvalidation,
-  reportObservation,
-  vaultFlow,
-  vaultSnapshot,
-} from "../schema/observations.js";
+import { reorgInvalidation, vaultFlow, vaultSnapshot } from "../schema/observations.js";
+import { evidenceReport, reportObservation } from "../schema/reports.js";
 import { rawDeposit, rawShareTransfer, rawVaultSnapshot, rawWithdraw } from "../schema/raw.js";
 import { resolveCapabilityAt, type VaultLookup, type VaultLookupEntry } from "./vaults.js";
 

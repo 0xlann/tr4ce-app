@@ -1,0 +1,1539 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TR4CE Evidence API",
+    "version": "1.0.0",
+    "description": "Vault evidence derived from confirmed on-chain observations. Every report cites the exact rows it rests on, and a repeated request over identical observations returns the report that already exists rather than a new one."
+  },
+  "paths": {
+    "/v1/vaults": {
+      "get": {
+        "operationId": "listVaults",
+        "summary": "List curated vaults.",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 8453
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The curated registry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body or query does not match the schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "operationId": "createReport",
+        "summary": "Produce an evidence report, or return the one that already exists.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An equivalent report was already stored; nothing was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "A new report was stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body or query does not match the schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The observations needed to answer do not exist yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reports/{id}": {
+      "get": {
+        "operationId": "getReport",
+        "summary": "Read a stored report exactly as it was served.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^trc_[0-9a-f]{32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stored report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/policies/evaluate": {
+      "post": {
+        "operationId": "evaluatePolicy",
+        "summary": "Evaluate a candidate policy without storing anything.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluatePolicyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The evaluation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluatePolicyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body or query does not match the schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The observations needed to answer do not exist yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The candidate policy did not validate; issues are returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluatePolicyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_REQUEST",
+                  "UNKNOWN_VAULT",
+                  "INSUFFICIENT_OBSERVATIONS",
+                  "INCOMPLETE_EVIDENCE",
+                  "INVALID_POLICY",
+                  "REPORT_NOT_FOUND",
+                  "INTERNAL_ERROR"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reasonCodes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "MISSING_OBSERVATION",
+                    "STALE_EVIDENCE",
+                    "INCOMPATIBLE_ASSET",
+                    "INCOMPATIBLE_IMPLEMENTATION",
+                    "CALL_REVERTED",
+                    "UNSUPPORTED_CAPABILITY",
+                    "AMBIGUOUS_CAPABILITY",
+                    "UNSUPPORTED_VAULT",
+                    "PROVIDER_UNAVAILABLE",
+                    "REORG_INVALIDATED",
+                    "INVALID_POLICY",
+                    "SIMULATION_REVERTED",
+                    "SIMULATION_STALE",
+                    "WALLET_CONTEXT_CHANGED"
+                  ]
+                }
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "reasonCodes",
+              "issues"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "VaultSummary": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "symbol": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "asset": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "assetSymbol": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shareDecimals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "listed",
+              "degraded",
+              "unsupported"
+            ]
+          },
+          "adapterKey": {
+            "type": "string"
+          },
+          "adapterVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chainId",
+          "address",
+          "symbol",
+          "name",
+          "asset",
+          "assetSymbol",
+          "shareDecimals",
+          "status",
+          "adapterKey",
+          "adapterVersion"
+        ],
+        "additionalProperties": false
+      },
+      "VaultListResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "vaults": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "chainId": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "address": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{40}$"
+                },
+                "symbol": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "asset": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{40}$"
+                },
+                "assetSymbol": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "shareDecimals": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "candidate",
+                    "listed",
+                    "degraded",
+                    "unsupported"
+                  ]
+                },
+                "adapterKey": {
+                  "type": "string"
+                },
+                "adapterVersion": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "chainId",
+                "address",
+                "symbol",
+                "name",
+                "asset",
+                "assetSymbol",
+                "shareDecimals",
+                "status",
+                "adapterKey",
+                "adapterVersion"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "vaults"
+        ],
+        "additionalProperties": false
+      },
+      "CreateReportRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "vaultAddress": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "windowDays": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 365
+          },
+          "policy": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "const": 1
+              },
+              "underlyingAssets": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "const": "USDC"
+                }
+              },
+              "minHistoryDays": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "minTvlAssets": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "minObservedReturnBps": {
+                "type": "object",
+                "properties": {
+                  "windowDays": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "value": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "windowDays",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "minWithdrawableAssets": {
+                "type": "object",
+                "properties": {
+                  "owner": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "value": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  }
+                },
+                "required": [
+                  "owner",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "version",
+              "underlyingAssets",
+              "minHistoryDays",
+              "minTvlAssets",
+              "minObservedReturnBps",
+              "minWithdrawableAssets"
+            ],
+            "additionalProperties": false
+          },
+          "policyName": {
+            "default": "default",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "chainId",
+          "vaultAddress",
+          "windowDays",
+          "policy",
+          "policyName"
+        ],
+        "additionalProperties": false
+      },
+      "ReportResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "created": {
+            "type": "boolean"
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "1.0.0"
+              },
+              "reportId": {
+                "type": "string",
+                "pattern": "^trc_[A-Za-z0-9]+$"
+              },
+              "calculationVersion": {
+                "type": "string",
+                "minLength": 1
+              },
+              "vault": {
+                "type": "object",
+                "properties": {
+                  "chainId": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "address": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "asset": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "assetSymbol": {
+                    "type": "string",
+                    "const": "USDC"
+                  }
+                },
+                "required": [
+                  "chainId",
+                  "address",
+                  "asset",
+                  "assetSymbol"
+                ],
+                "additionalProperties": false
+              },
+              "asOf": {
+                "type": "object",
+                "properties": {
+                  "blockNumber": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "blockHash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "blockNumber",
+                  "blockHash",
+                  "timestamp"
+                ],
+                "additionalProperties": false
+              },
+              "generatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "observations": {
+                "type": "object",
+                "properties": {
+                  "shareValue": {
+                    "type": "object",
+                    "properties": {
+                      "oneShareBaseUnits": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      "assetsNow": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      "assetsAtStart": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      "windowDays": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "returnBps": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "oneShareBaseUnits",
+                      "assetsNow",
+                      "assetsAtStart",
+                      "windowDays",
+                      "returnBps"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "totalAssets": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "netFlowAssets": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)$"
+                  },
+                  "maxWithdrawAssets": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "shareValue",
+                  "totalAssets",
+                  "netFlowAssets",
+                  "maxWithdrawAssets"
+                ],
+                "additionalProperties": false
+              },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PASS",
+                      "FAIL",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "enum": [
+                            "underlyingAsset",
+                            "minimumHistory",
+                            "minimumTvl",
+                            "minimumObservedReturn",
+                            "minimumWithdrawableAssets"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PASS",
+                            "FAIL",
+                            "UNKNOWN"
+                          ]
+                        },
+                        "threshold": {
+                          "type": "string"
+                        },
+                        "observedValue": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "evidenceReferences": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "reasonCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "MISSING_OBSERVATION",
+                              "STALE_EVIDENCE",
+                              "INCOMPATIBLE_ASSET",
+                              "INCOMPATIBLE_IMPLEMENTATION",
+                              "CALL_REVERTED",
+                              "UNSUPPORTED_CAPABILITY",
+                              "AMBIGUOUS_CAPABILITY",
+                              "UNSUPPORTED_VAULT",
+                              "PROVIDER_UNAVAILABLE",
+                              "REORG_INVALIDATED",
+                              "INVALID_POLICY",
+                              "SIMULATION_REVERTED",
+                              "SIMULATION_STALE",
+                              "WALLET_CONTEXT_CHANGED"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "status",
+                        "threshold",
+                        "observedValue",
+                        "evidenceReferences",
+                        "reasonCodes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "version",
+                  "status",
+                  "rules"
+                ],
+                "additionalProperties": false
+              },
+              "provenance": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sourceType": {
+                      "type": "string",
+                      "enum": [
+                        "indexed",
+                        "rpc",
+                        "simulation",
+                        "cached"
+                      ]
+                    },
+                    "chainId": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "blockNumber": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)$"
+                    },
+                    "blockHash": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{64}$"
+                    },
+                    "reference": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "sourceType",
+                    "chainId",
+                    "blockNumber",
+                    "blockHash",
+                    "reference"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "limitations": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "reportId",
+              "calculationVersion",
+              "vault",
+              "asOf",
+              "generatedAt",
+              "observations",
+              "policy",
+              "provenance",
+              "limitations"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "created",
+          "report"
+        ],
+        "additionalProperties": false
+      },
+      "EvidenceReportV1": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "reportId": {
+            "type": "string",
+            "pattern": "^trc_[A-Za-z0-9]+$"
+          },
+          "calculationVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "vault": {
+            "type": "object",
+            "properties": {
+              "chainId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "address": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "asset": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "assetSymbol": {
+                "type": "string",
+                "const": "USDC"
+              }
+            },
+            "required": [
+              "chainId",
+              "address",
+              "asset",
+              "assetSymbol"
+            ],
+            "additionalProperties": false
+          },
+          "asOf": {
+            "type": "object",
+            "properties": {
+              "blockNumber": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "blockHash": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "blockNumber",
+              "blockHash",
+              "timestamp"
+            ],
+            "additionalProperties": false
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "observations": {
+            "type": "object",
+            "properties": {
+              "shareValue": {
+                "type": "object",
+                "properties": {
+                  "oneShareBaseUnits": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "assetsNow": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "assetsAtStart": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "windowDays": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "returnBps": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "oneShareBaseUnits",
+                  "assetsNow",
+                  "assetsAtStart",
+                  "windowDays",
+                  "returnBps"
+                ],
+                "additionalProperties": false
+              },
+              "totalAssets": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "netFlowAssets": {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)$"
+              },
+              "maxWithdrawAssets": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "shareValue",
+              "totalAssets",
+              "netFlowAssets",
+              "maxWithdrawAssets"
+            ],
+            "additionalProperties": false
+          },
+          "policy": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "const": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "UNKNOWN"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "enum": [
+                        "underlyingAsset",
+                        "minimumHistory",
+                        "minimumTvl",
+                        "minimumObservedReturn",
+                        "minimumWithdrawableAssets"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "threshold": {
+                      "type": "string"
+                    },
+                    "observedValue": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "evidenceReferences": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "reasonCodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "MISSING_OBSERVATION",
+                          "STALE_EVIDENCE",
+                          "INCOMPATIBLE_ASSET",
+                          "INCOMPATIBLE_IMPLEMENTATION",
+                          "CALL_REVERTED",
+                          "UNSUPPORTED_CAPABILITY",
+                          "AMBIGUOUS_CAPABILITY",
+                          "UNSUPPORTED_VAULT",
+                          "PROVIDER_UNAVAILABLE",
+                          "REORG_INVALIDATED",
+                          "INVALID_POLICY",
+                          "SIMULATION_REVERTED",
+                          "SIMULATION_STALE",
+                          "WALLET_CONTEXT_CHANGED"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "status",
+                    "threshold",
+                    "observedValue",
+                    "evidenceReferences",
+                    "reasonCodes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "version",
+              "status",
+              "rules"
+            ],
+            "additionalProperties": false
+          },
+          "provenance": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sourceType": {
+                  "type": "string",
+                  "enum": [
+                    "indexed",
+                    "rpc",
+                    "simulation",
+                    "cached"
+                  ]
+                },
+                "chainId": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "blockNumber": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)$"
+                },
+                "blockHash": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{64}$"
+                },
+                "reference": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "sourceType",
+                "chainId",
+                "blockNumber",
+                "blockHash",
+                "reference"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "limitations": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "reportId",
+          "calculationVersion",
+          "vault",
+          "asOf",
+          "generatedAt",
+          "observations",
+          "policy",
+          "provenance",
+          "limitations"
+        ],
+        "additionalProperties": false
+      },
+      "EvaluatePolicyRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "vaultAddress": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "windowDays": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 365
+          },
+          "policy": {}
+        },
+        "required": [
+          "chainId",
+          "vaultAddress",
+          "windowDays",
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "EvaluatePolicyResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PASS",
+                      "FAIL",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "enum": [
+                            "underlyingAsset",
+                            "minimumHistory",
+                            "minimumTvl",
+                            "minimumObservedReturn",
+                            "minimumWithdrawableAssets"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PASS",
+                            "FAIL",
+                            "UNKNOWN"
+                          ]
+                        },
+                        "threshold": {
+                          "type": "string"
+                        },
+                        "observedValue": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "evidenceReferences": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "reasonCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "MISSING_OBSERVATION",
+                              "STALE_EVIDENCE",
+                              "INCOMPATIBLE_ASSET",
+                              "INCOMPATIBLE_IMPLEMENTATION",
+                              "CALL_REVERTED",
+                              "UNSUPPORTED_CAPABILITY",
+                              "AMBIGUOUS_CAPABILITY",
+                              "UNSUPPORTED_VAULT",
+                              "PROVIDER_UNAVAILABLE",
+                              "REORG_INVALIDATED",
+                              "INVALID_POLICY",
+                              "SIMULATION_REVERTED",
+                              "SIMULATION_STALE",
+                              "WALLET_CONTEXT_CHANGED"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "status",
+                        "threshold",
+                        "observedValue",
+                        "evidenceReferences",
+                        "reasonCodes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "version",
+                  "status",
+                  "rules"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "asOfBlock": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "evaluation",
+          "issues",
+          "asOfBlock"
+        ],
+        "additionalProperties": false
+      },
+      "PolicyV1": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "underlyingAssets": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "const": "USDC"
+            }
+          },
+          "minHistoryDays": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "minTvlAssets": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "minObservedReturnBps": {
+            "type": "object",
+            "properties": {
+              "windowDays": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "value": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "windowDays",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "minWithdrawableAssets": {
+            "type": "object",
+            "properties": {
+              "owner": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "value": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              }
+            },
+            "required": [
+              "owner",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "version",
+          "underlyingAssets",
+          "minHistoryDays",
+          "minTvlAssets",
+          "minObservedReturnBps",
+          "minWithdrawableAssets"
+        ],
+        "additionalProperties": false
+      },
+      "PolicyEvaluation": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNKNOWN"
+            ]
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "underlyingAsset",
+                    "minimumHistory",
+                    "minimumTvl",
+                    "minimumObservedReturn",
+                    "minimumWithdrawableAssets"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PASS",
+                    "FAIL",
+                    "UNKNOWN"
+                  ]
+                },
+                "threshold": {
+                  "type": "string"
+                },
+                "observedValue": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "evidenceReferences": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reasonCodes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "MISSING_OBSERVATION",
+                      "STALE_EVIDENCE",
+                      "INCOMPATIBLE_ASSET",
+                      "INCOMPATIBLE_IMPLEMENTATION",
+                      "CALL_REVERTED",
+                      "UNSUPPORTED_CAPABILITY",
+                      "AMBIGUOUS_CAPABILITY",
+                      "UNSUPPORTED_VAULT",
+                      "PROVIDER_UNAVAILABLE",
+                      "REORG_INVALIDATED",
+                      "INVALID_POLICY",
+                      "SIMULATION_REVERTED",
+                      "SIMULATION_STALE",
+                      "WALLET_CONTEXT_CHANGED"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "key",
+                "status",
+                "threshold",
+                "observedValue",
+                "evidenceReferences",
+                "reasonCodes"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "rules"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

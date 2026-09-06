@@ -21,14 +21,9 @@ import {
 import { readApplicationCursor, writeApplicationCursor } from "./repositories/cursors.js";
 import { loadVaultLookup, seedRegistry, type VaultLookup } from "./repositories/vaults.js";
 import { bytesToHex, hexToBytes } from "./schema/columns.js";
-import {
-  evidenceReport,
-  reorgInvalidation,
-  reportObservation,
-  vaultFlow,
-  vaultSnapshot,
-} from "./schema/observations.js";
+import { reorgInvalidation, vaultFlow, vaultSnapshot } from "./schema/observations.js";
 import { rawDeposit, rawShareTransfer, rawVaultSnapshot } from "./schema/raw.js";
+import { evidenceReport, reportObservation } from "./schema/reports.js";
 
 /**
  * Promotion against a real PostgreSQL instance.
@@ -91,7 +86,10 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
 
     const applied = await migrate(databaseUrl);
 
-    expect(applied.applied).toEqual(["0001_registry_observations.sql"]);
+    expect(applied.applied).toEqual([
+      "0001_registry_observations.sql",
+      "0002_reports_and_policies.sql",
+    ]);
     // The sink owns `cursors`; the application never creates it, so the test stands in.
     await db.execute(
       sql`CREATE TABLE cursors (id TEXT PRIMARY KEY, cursor TEXT NOT NULL, block_num BIGINT NOT NULL, block_id TEXT NOT NULL)`,
@@ -125,7 +123,8 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
     // Truncate rather than re-migrate: the schema is the thing under test and rebuilding it per
     // test would hide a constraint that only bites on the second insert.
     await db.execute(
-      sql`TRUNCATE report_observation, evidence_report, reorg_invalidation, vault_flow, vault_snapshot, indexer_cursor,
+      sql`TRUNCATE rule_result, report_observation, evidence_report, rpc_observation,
+                   reorg_invalidation, vault_flow, vault_snapshot, indexer_cursor,
                    raw_erc4626_deposit, raw_erc4626_withdraw, raw_erc4626_share_transfer, raw_erc4626_vault_snapshot`,
     );
   });
@@ -226,6 +225,31 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
   // -------------------------------------------------------------------------------------------
   // Replay idempotency (checklist item 2)
   // -------------------------------------------------------------------------------------------
+
+  /*
+   * A minimal stored report.
+   *
+   * Evidence-only, so `policyVersionId` stays null and `status` is `not_evaluated` — the CHECK in
+   * 0002 ties those two together. The id has to match `^trc_[0-9a-f]{32}$`, which is the real
+   * shape @tr4ce/evidence derives, not an arbitrary string.
+   */
+  async function seedReport(reportId: string, vaultRowId: string, blockNumber: number) {
+    await db.insert(evidenceReport).values({
+      id: reportId,
+      vaultId: vaultRowId,
+      chainId: CHAIN_ID,
+      asOfBlockNumber: String(blockNumber),
+      asOfBlockHash: hexToBytes(BLOCK_1),
+      asOfTime: blockTime(blockNumber),
+      windowSeconds: 7 * 24 * 60 * 60,
+      actualElapsedSeconds: null,
+      schemaVersion: SCHEMA_VERSION,
+      calculationVersion: "1.0.0",
+      status: "not_evaluated",
+      resultJson: { schemaVersion: SCHEMA_VERSION },
+      canonicalInputHash: hexToBytes(`0x${reportId.slice(4).repeat(2)}`),
+    });
+  }
 
   describe("replay", () => {
     it("produces byte-identical application rows, primary keys included", async () => {
@@ -486,24 +510,18 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
 
       const vaultRowId = deriveVaultId(CHAIN_ID, ADDRESS_A);
       const snapshotRowId = vaultSnapshotId(CHAIN_ID, ADDRESS_A, BLOCK_1, SCHEMA_VERSION);
-      const reportId = "11111111-1111-5111-8111-111111111111";
+      const reportId = `trc_${"1".repeat(32)}`;
 
-      await db.insert(evidenceReport).values({
-        id: reportId,
-        vaultId: vaultRowId,
-        chainId: CHAIN_ID,
-        asOfBlockNumber: String(WINDOW_START + 10),
-        asOfBlockHash: hexToBytes(BLOCK_1),
-        schemaVersion: SCHEMA_VERSION,
-        calculationVersion: "1.0.0",
-      });
+      await seedReport(reportId, vaultRowId, WINDOW_START + 10);
 
       await db.insert(reportObservation).values({
         id: "22222222-2222-5222-8222-222222222222",
         reportId,
         vaultId: vaultRowId,
+        observationType: "snapshot",
         vaultSnapshotId: snapshotRowId,
-        role: "as_of",
+        purpose: "end",
+        ordinal: 0,
       });
 
       return { reportId, snapshotRowId };
@@ -666,24 +684,20 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
         .set({ canonical: false })
         .where(eq(vaultSnapshot.id, snapshotRowId));
 
-      await db.insert(evidenceReport).values({
-        id: "33333333-3333-5333-8333-333333333333",
-        vaultId: vaultRowId,
-        chainId: CHAIN_ID,
-        asOfBlockNumber: String(WINDOW_START + 10),
-        asOfBlockHash: hexToBytes(BLOCK_1),
-        schemaVersion: SCHEMA_VERSION,
-        calculationVersion: "1.0.0",
-      });
+      const reportId = `trc_${"3".repeat(32)}`;
+
+      await seedReport(reportId, vaultRowId, WINDOW_START + 10);
 
       const failure = await db
         .insert(reportObservation)
         .values({
           id: "44444444-4444-5444-8444-444444444444",
-          reportId: "33333333-3333-5333-8333-333333333333",
+          reportId,
           vaultId: vaultRowId,
+          observationType: "snapshot",
           vaultSnapshotId: snapshotRowId,
-          role: "as_of",
+          purpose: "end",
+          ordinal: 0,
         })
         .then(
           () => null,
@@ -704,25 +718,21 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
       const vaultA = deriveVaultId(CHAIN_ID, ADDRESS_A);
       const snapshotOfB = vaultSnapshotId(CHAIN_ID, ADDRESS_B, BLOCK_1, SCHEMA_VERSION);
 
-      await db.insert(evidenceReport).values({
-        id: "55555555-5555-5555-8555-555555555555",
-        vaultId: vaultA,
-        chainId: CHAIN_ID,
-        asOfBlockNumber: String(WINDOW_START + 10),
-        asOfBlockHash: hexToBytes(BLOCK_1),
-        schemaVersion: SCHEMA_VERSION,
-        calculationVersion: "1.0.0",
-      });
+      const reportId = `trc_${"5".repeat(32)}`;
+
+      await seedReport(reportId, vaultA, WINDOW_START + 10);
 
       // The composite foreign key catches this in the database, so an application bug cannot mix
       // two vaults' evidence into one report no matter how the calculation is written.
       await expect(
         db.insert(reportObservation).values({
           id: "66666666-6666-5666-8666-666666666666",
-          reportId: "55555555-5555-5555-8555-555555555555",
+          reportId,
           vaultId: vaultA,
+          observationType: "snapshot",
           vaultSnapshotId: snapshotOfB,
-          role: "as_of",
+          purpose: "end",
+          ordinal: 0,
         }),
       ).rejects.toThrow();
     });
