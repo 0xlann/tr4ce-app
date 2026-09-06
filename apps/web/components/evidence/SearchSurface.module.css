@@ -1,0 +1,37 @@
+.main { margin: 0 auto; max-width: 1280px; padding: 72px clamp(20px, 5vw, 64px) 112px; }
+.layout { align-items: start; display: grid; gap: 36px; grid-template-columns: minmax(260px, .36fr) minmax(0, 1fr); margin-top: 50px; }
+.policy { background: var(--tr4ce-surface); border: 1px solid var(--tr4ce-line); padding: 24px; position: sticky; top: 98px; }
+.eyebrow { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; margin: 0 0 10px; text-transform: uppercase; }
+.policy h2 { font-family: var(--font-display); font-size: 28px; letter-spacing: -.04em; margin: 0; }
+.presets { display: grid; gap: 7px; grid-template-columns: repeat(3, 1fr); margin: 20px 0; }
+.presets button { background: var(--tr4ce-cream-50); border: 1px solid var(--tr4ce-line); min-height: 40px; text-transform: capitalize; }
+.presets .activePreset { background: var(--tr4ce-brand-700); border-color: var(--tr4ce-brand-700); color: white; }
+.policy dl { display: grid; gap: 14px; margin: 0; }
+.policy dl div { border-bottom: 1px solid var(--tr4ce-line); padding-bottom: 12px; }
+.policy dt { color: var(--tr4ce-ink-600); font-size: 12px; margin-bottom: 4px; }
+.policy dd { font-family: var(--font-mono); font-size: 13px; margin: 0; }
+.usePolicy, .addressCheck button { background: var(--tr4ce-brand-700); border: 1px solid var(--tr4ce-brand-700); color: white; font-weight: 700; margin-top: 20px; min-height: 44px; padding: 0 14px; width: 100%; }
+.summary { align-items: baseline; display: flex; gap: 24px; margin-bottom: 18px; }
+.summary div { align-items: baseline; display: flex; gap: 6px; }
+.summary strong { font-family: var(--font-display); font-size: 30px; letter-spacing: -.05em; }
+.summary span, .summary p { color: var(--tr4ce-ink-600); font-size: 13px; }
+.summary p { margin: 0 0 0 auto; }
+.tableWrap { background: var(--tr4ce-surface); border: 1px solid var(--tr4ce-line); overflow-x: auto; }
+.tableWrap table { border-collapse: collapse; min-width: 860px; width: 100%; }
+.tableWrap caption { caption-side: top; color: var(--tr4ce-ink-600); font-family: var(--font-mono); font-size: 12px; padding: 18px 22px; text-align: left; }
+.tableWrap th, .tableWrap td { border-top: 1px solid var(--tr4ce-line); font-size: 13px; padding: 16px 18px; text-align: left; vertical-align: middle; }
+.tableWrap thead th { border-top: 0; color: var(--tr4ce-ink-600); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.tableWrap tbody th { min-width: 220px; }
+.tableWrap tbody th strong, .tableWrap tbody th span, .tableWrap tbody th code, .tableWrap td small { display: block; }
+.tableWrap tbody th span, .tableWrap tbody th code, .tableWrap td small { color: var(--tr4ce-ink-600); font-size: 11px; font-weight: 400; margin-top: 4px; }
+.tableWrap tbody th code { font-family: var(--font-mono); }
+.tableWrap td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tableWrap td a { color: var(--tr4ce-brand-700); font-family: var(--font-body); font-weight: 700; }
+.addressCheck { border: 1px solid var(--tr4ce-line); margin-top: 20px; padding: 24px; }
+.addressCheck label { display: block; font-family: var(--font-display); font-size: 20px; letter-spacing: -.03em; margin-bottom: 12px; }
+.addressCheck div { display: flex; gap: 8px; }
+.addressCheck input { border: 1px solid var(--tr4ce-line); min-height: 44px; padding: 0 12px; width: 100%; }
+.addressCheck button { margin: 0; width: auto; white-space: nowrap; }
+.addressCheck p { color: var(--tr4ce-ink-600); font-size: 13px; margin: 10px 0 0; }
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } .policy { position: static; } }
+@media (max-width: 620px) { .main { padding-top: 48px; } .summary { align-items: start; flex-wrap: wrap; gap: 12px; } .summary p { margin: 0; width: 100%; } .addressCheck div { display: grid; } .addressCheck button { width: 100%; } }

@@ -1,0 +1,5 @@
+.banner { align-items: center; border-bottom: 1px solid var(--tr4ce-line); display: flex; font-size: 13px; gap: 8px; justify-content: center; margin: 0; min-height: 38px; padding: 8px 20px; text-align: center; }
+.fresh { background: var(--tr4ce-brand-50); color: var(--tr4ce-ink-800); }
+.refreshing { background: #eff6ff; color: #1e4f8f; }
+.stale, .partial { background: #fff5e5; color: #754400; }
+.reorged { background: #fff0ee; color: #8a1710; }

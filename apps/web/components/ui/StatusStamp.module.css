@@ -1,0 +1,20 @@
+.stamp {
+  align-items: center;
+  border: 1px solid currentColor;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: .06em;
+  line-height: 1;
+  padding: 7px 8px;
+  width: max-content;
+}
+
+.icon { font-size: 13px; line-height: 0; }
+.pass { background: #e1f4e8; color: #075a30; }
+.fail { background: #ffebe8; color: #8a1710; }
+.unknown { background: #eeeaf9; color: #504281; }
+.feature { font-size: 13px; padding: 10px 12px; transform: rotate(-1.5deg); }

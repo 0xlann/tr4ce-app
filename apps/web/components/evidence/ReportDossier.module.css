@@ -1,0 +1,37 @@
+.report { background: var(--tr4ce-surface); border: 1px solid var(--tr4ce-line); }
+.header { align-items: start; display: flex; gap: 24px; justify-content: space-between; padding: clamp(28px, 5vw, 54px); }
+.header p, .sectionLead p, .action p { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; margin: 0 0 12px; text-transform: uppercase; }
+.header h1 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spacing: -.06em; line-height: .95; margin: 0 0 14px; }
+.header span { color: var(--tr4ce-ink-600); font-size: 14px; overflow-wrap: anywhere; }
+.header code { font-family: var(--font-mono); font-size: 12px; }
+.context { align-items: center; border-block: 1px solid var(--tr4ce-line); color: var(--tr4ce-ink-600); display: flex; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; gap: 16px; padding: 14px clamp(28px, 5vw, 54px); }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); }
+.metrics div { border-right: 1px solid var(--tr4ce-line); padding: clamp(26px, 4vw, 44px); }
+.metrics div:last-child { border-right: 0; }
+.metrics p { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; margin: 0 0 12px; }
+.metrics strong { display: block; font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.8rem); letter-spacing: -.065em; line-height: 1; }
+.metrics span { color: var(--tr4ce-ink-600); display: block; font-size: 13px; line-height: 1.45; margin-top: 10px; }
+.section { border-top: 1px solid var(--tr4ce-line); padding: clamp(28px, 5vw, 54px); }
+.sectionLead { align-items: end; display: flex; gap: 24px; justify-content: space-between; margin-bottom: 28px; }
+.sectionLead h2, .action h2 { font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 2.6rem); letter-spacing: -.045em; line-height: 1; margin: 0; }
+.sectionLead > span { color: var(--tr4ce-ink-600); font-family: var(--font-mono); font-size: 12px; }
+.sectionLead a { color: var(--tr4ce-brand-700); font-weight: 700; }
+.rules { border-top: 1px solid var(--tr4ce-line); }
+.rules article { align-items: center; border-bottom: 1px solid var(--tr4ce-line); display: grid; gap: 20px; grid-template-columns: 1.5fr 1fr auto; padding: 16px 0; }
+.rules strong, .rules span, .rules small { display: block; }
+.rules strong { font-size: 14px; }
+.rules article > div:first-child span, .rules small { color: var(--tr4ce-ink-600); font-size: 12px; margin-top: 5px; }
+.observed { font-family: var(--font-mono); font-size: 13px; }
+.chartWrap { margin-top: 28px; }
+.calculation { background: var(--tr4ce-cream-50); border: 1px solid var(--tr4ce-line); padding: 24px; }
+.calculation > code { display: block; font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+.calculation dl { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); margin: 24px 0 0; }
+.calculation dt { color: var(--tr4ce-ink-600); font-size: 12px; margin-bottom: 5px; }
+.calculation dd { font-family: var(--font-mono); font-size: 12px; margin: 0; overflow-wrap: anywhere; }
+.action { align-items: center; background: var(--tr4ce-brand-900); color: white; display: flex; justify-content: space-between; padding: clamp(28px, 5vw, 54px); }
+.action p { color: #b7d7c2; }
+.action a { background: var(--tr4ce-cream-100); color: var(--tr4ce-brand-900); font-weight: 700; min-height: 44px; padding: 13px 16px; text-decoration: none; white-space: nowrap; }
+.json { border-top: 1px solid var(--tr4ce-line); font-family: var(--font-mono); padding: 22px clamp(28px, 5vw, 54px); }
+.json summary { color: var(--tr4ce-brand-700); cursor: pointer; font-weight: 600; }
+.json pre { background: var(--tr4ce-ink-950); color: #d4e4d9; font-size: 11px; max-height: 480px; overflow: auto; padding: 20px; white-space: pre-wrap; }
+@media (max-width: 760px) { .header, .sectionLead, .action { display: grid; } .header { gap: 20px; } .metrics { grid-template-columns: 1fr; } .metrics div { border-bottom: 1px solid var(--tr4ce-line); border-right: 0; } .rules article { align-items: start; grid-template-columns: 1fr; } .calculation dl { grid-template-columns: 1fr 1fr; } .action { gap: 24px; } .action a { width: max-content; } }

@@ -1,0 +1,24 @@
+.console { background: var(--tr4ce-surface); border: 1px solid var(--tr4ce-line); }
+.body { padding: clamp(28px, 5vw, 54px); }
+.eyebrow { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; margin: 0 0 14px; }
+.body h1 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spacing: -.06em; line-height: .95; margin: 0; max-width: 760px; }
+.lead { color: var(--tr4ce-ink-600); line-height: 1.6; margin: 24px 0 34px; max-width: 620px; }
+.steps { display: flex; list-style: none; margin: 0 0 34px; padding: 0; }
+.steps li { border-bottom: 2px solid var(--tr4ce-line); color: var(--tr4ce-ink-600); flex: 1; font-family: var(--font-mono); font-size: 12px; padding: 12px 8px; }
+.steps span { display: block; font-size: 10px; margin-bottom: 5px; }
+.steps .done { border-color: var(--tr4ce-brand-700); color: var(--tr4ce-brand-700); font-weight: 600; }
+.grid { border: 1px solid var(--tr4ce-line); display: grid; grid-template-columns: 1fr 1fr; }
+.grid article { padding: clamp(24px, 4vw, 38px); }
+.grid article + article { border-left: 1px solid var(--tr4ce-line); }
+.grid article > p { color: var(--tr4ce-brand-700); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; margin: 0 0 12px; }
+.grid article > strong { display: block; font-family: var(--font-display); font-size: 32px; letter-spacing: -.045em; text-transform: capitalize; }
+.state { color: var(--tr4ce-brand-700); }
+.grid dl { display: grid; gap: 16px; margin: 28px 0; }
+.grid dt { color: var(--tr4ce-ink-600); font-size: 12px; margin-bottom: 5px; }
+.grid dd { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.grid dd small { color: var(--tr4ce-ink-600); display: block; margin-top: 4px; }
+.controls { display: grid; gap: 8px; }
+.controls button { background: var(--tr4ce-cream-50); border: 1px solid var(--tr4ce-line); color: var(--tr4ce-ink-950); min-height: 44px; padding: 0 12px; text-align: left; }
+.controls button:nth-child(3), .controls button:nth-child(4) { background: var(--tr4ce-brand-700); border-color: var(--tr4ce-brand-700); color: white; }
+.controls button:disabled { cursor: not-allowed; opacity: .45; }
+@media (max-width: 760px) { .steps { overflow-x: auto; } .steps li { min-width: 130px; } .grid { grid-template-columns: 1fr; } .grid article + article { border-left: 0; border-top: 1px solid var(--tr4ce-line); } }

@@ -1,0 +1,3 @@
+.callout { background: var(--tr4ce-cream-100); border-left: 3px solid var(--tr4ce-warning); color: #584226; padding: 20px 24px; }
+.callout p { line-height: 1.55; margin: 8px 0 0; }
+.eyebrow { color: #754400; font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; margin: 0 !important; text-transform: uppercase; }

@@ -1,0 +1,30 @@
+.lockup {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.icon {
+  display: block;
+  height: 30px;
+  object-fit: contain;
+  width: 30px;
+}
+
+.wordmark {
+  display: block;
+  height: 19px;
+  object-fit: contain;
+  width: auto;
+}
+
+.compact {
+  justify-content: center;
+  width: 44px;
+}
+
+.compact .icon {
+  height: 28px;
+  width: 28px;
+}
