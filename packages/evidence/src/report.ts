@@ -10,7 +10,7 @@ import {
   type VaultIdentity,
 } from "@tr4ce/domain";
 
-import { deriveReportId } from "./canonical.js";
+import { deriveReportIdentity } from "./canonical.js";
 import { isUsable } from "./capability.js";
 import { aggregateFlows, type FlowAggregate, type FlowRow } from "./flows.js";
 import { observeShareValue } from "./share-value.js";
@@ -20,8 +20,9 @@ import { observeShareValue } from "./share-value.js";
  *
  * "Pure" here includes the clock and the random number generator: `generatedAt`,
  * `calculationVersion`, and every observation are inputs, and the report identifier is derived from
- * them. Reading the time inside this function would make the same evidence produce a different
- * report on every call, and the reproducibility guarantee (PRD TR-F-016) would be unverifiable.
+ * the observations among them. Reading the time inside this function would make the same evidence
+ * produce a different report on every call, and the reproducibility guarantee (PRD TR-F-016) would
+ * be unverifiable.
  */
 
 /** One promoted `vault_snapshot`, with amounts already parsed out of PostgreSQL's decimal strings. */
@@ -98,6 +99,14 @@ export interface DraftObservations {
 export interface EvidenceReportDraft {
   schemaVersion: "1.0.0";
   reportId: string;
+  /**
+   * SHA-256 over the observations alone, as lowercase hex.
+   *
+   * Carried on the draft because the persistence layer deduplicates on it (ERD section 6) and must
+   * not re-derive it from a differently shaped object — two spellings of "the same inputs" would
+   * write two rows for one report.
+   */
+  canonicalInputHash: string;
   calculationVersion: string;
   vault: VaultIdentity;
   asOf: { blockNumber: string; blockHash: string; timestamp: string };
@@ -174,8 +183,13 @@ export function buildEvidence(input: EvidenceInput): EvidenceReportDraft {
    * The identifier covers the inputs, not the output: two reports built from the same observations
    * at the same calculation version are the same report, and changing any observed value must
    * produce a different id rather than silently overwrite a published one.
+   *
+   * `generatedAt` is therefore deliberately absent. It is when we rendered the report, not anything
+   * the chain told us, and including it made the guarantee above false — two requests over
+   * identical observations a second apart produced two ids and would have written two rows. It
+   * stays on the report body, where it is useful, and out of the identity, where it was not.
    */
-  const reportId = deriveReportId({
+  const { reportId, canonicalInputHash } = deriveReportIdentity({
     vault: input.vault,
     asOf: input.asOf,
     start: serialiseSnapshot(input.start),
@@ -198,12 +212,12 @@ export function buildEvidence(input: EvidenceInput): EvidenceReportDraft {
     capability: { adapterKey: input.capability.adapterKey, adapterVersion: input.capability.adapterVersion },
     windowDays: input.windowDays,
     calculationVersion: input.calculationVersion,
-    generatedAt: input.generatedAt,
   });
 
   return {
     schemaVersion: "1.0.0",
     reportId,
+    canonicalInputHash,
     calculationVersion: input.calculationVersion,
     vault: input.vault,
     asOf: input.asOf,

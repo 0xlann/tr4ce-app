@@ -289,7 +289,38 @@ describe("reproducibility", () => {
   it("derives an id that matches the pinned fixture", () => {
     // Pinned so an accidental change to the hashed input surface is caught, not just an unstable
     // one. Update deliberately and never to make a test pass.
-    expect(buildEvidence(input()).reportId).toBe("trc_1d3d1540e28b24ec3c56bd4cd424a5f8");
+    //
+    // Moved once, on 2026-09-07, when generatedAt was removed from the hashed surface. That was a
+    // deliberate change to what the id means, and the test below is the reason it was made.
+    expect(buildEvidence(input()).reportId).toBe("trc_bf2b3afae9cebabb1c42e1ebdd3897d8");
+  });
+
+  it("gives the same id to the same observations rendered at different times", () => {
+    /*
+     * The property Task 6's acceptance clause rests on: repeating a request over identical inputs
+     * returns the same report.
+     *
+     * generatedAt says when we rendered the report, not anything the chain reported. While it was
+     * inside the hash this assertion failed, and two requests a second apart would each have
+     * written their own row for one set of observations.
+     */
+    const morning = buildEvidence(input({ generatedAt: "2026-09-05T09:00:00.000Z" }));
+    const evening = buildEvidence(input({ generatedAt: "2026-09-05T21:00:00.000Z" }));
+
+    expect(evening.reportId).toBe(morning.reportId);
+    expect(evening.canonicalInputHash).toBe(morning.canonicalInputHash);
+
+    // Still recorded, just no longer part of the identity.
+    expect(evening.generatedAt).not.toBe(morning.generatedAt);
+  });
+
+  it("derives the id from the canonical input hash", () => {
+    // One digest, two spellings of it. The database stores the full hash and deduplicates on it;
+    // the id is the prefix people paste into a URL. They must never disagree.
+    const draft = buildEvidence(input());
+
+    expect(draft.canonicalInputHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(draft.reportId).toBe(`trc_${draft.canonicalInputHash.slice(0, 32)}`);
   });
 
   it("changes the id when any observed value changes", () => {
@@ -308,13 +339,11 @@ describe("reproducibility", () => {
   });
 
   it("does not read the clock", () => {
-    // generatedAt is an input. If the engine reached for Date.now(), two calls a millisecond apart
-    // would differ and nothing here would be reproducible.
-    const early = buildEvidence(input({ generatedAt: "2026-09-05T00:00:00.000Z" }));
-    const later = buildEvidence(input({ generatedAt: "2026-09-05T00:00:00.000Z" }));
+    // generatedAt is an input, never Date.now(). Asserted on the field itself rather than on the
+    // id, which no longer depends on it.
+    const supplied = "2026-09-05T00:00:00.000Z";
 
-    expect(early.generatedAt).toBe(later.generatedAt);
-    expect(early.reportId).toBe(later.reportId);
+    expect(buildEvidence(input({ generatedAt: supplied })).generatedAt).toBe(supplied);
   });
 });
 
