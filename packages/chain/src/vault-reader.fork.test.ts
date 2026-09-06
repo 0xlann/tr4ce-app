@@ -55,16 +55,13 @@ describe.skipIf(rpcUrl === undefined).sequential("ERC-4626 reads at pinned Base 
     const client = createChainClient(rpcUrl!);
 
     /*
-     * One pass, one multicall per (vault, block), paced.
+     * One pass, one multicall per (vault, block).
      *
-     * The pause is not politeness. `https://mainnet.base.org` starts refusing requests after a
-     * handful in quick succession, and a refused request surfaces here as a failed call — which is
-     * indistinguishable from a revert unless you look at the message. Without pacing this suite
-     * reports capability failures that the chain never produced, which is precisely the class of
-     * false evidence the product exists to prevent. A keyed endpoint would not need this.
+     * RPC_URL_BASE must be a keyed endpoint. A public one throttles a burst like this, and a
+     * throttled call arrives here as a failed read — indistinguishable from a revert unless you
+     * read the message. That is not a hypothetical: it is what put false `reverted` statuses into
+     * the vault manifest, which `scripts/reprobe-manifest.mjs` had to go back and correct.
      */
-    const pace = () => new Promise((resolve) => setTimeout(resolve, 3_000));
-
     for (const vault of listed) {
       const oneShareUnits = 10n ** BigInt(vault.shareDecimals);
       const address = vault.address as Address;
@@ -74,8 +71,6 @@ describe.skipIf(rpcUrl === undefined).sequential("ERC-4626 reads at pinned Base 
         blockNumber: WINDOW_START,
         oneShareUnits,
       });
-
-      await pace();
 
       const atVerifiedHead = await readVaultAt(client, {
         vault: address,
@@ -87,7 +82,6 @@ describe.skipIf(rpcUrl === undefined).sequential("ERC-4626 reads at pinned Base 
       });
 
       captured.set(vault.address, { atWindowStart, atVerifiedHead });
-      await pace();
     }
 
     headTimestamp = await blockTimestamp(client, VERIFIED_HEAD);
