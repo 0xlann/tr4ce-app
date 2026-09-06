@@ -1,5 +1,6 @@
 export * from "./actions.js";
 export * from "./amounts.js";
+export * from "./canonical.js";
 export * from "./errors.js";
 export * from "./evidence.js";
 export * from "./identity.js";

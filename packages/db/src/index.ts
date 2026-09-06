@@ -3,6 +3,8 @@ export * from "./ids.js";
 export * from "./migrate.js";
 export * from "./repositories/cursors.js";
 export * from "./repositories/observations.js";
+export * from "./repositories/policies.js";
+export * from "./repositories/reports.js";
 export * from "./repositories/vaults.js";
 export * from "./schema/columns.js";
 export * from "./schema/cursors.js";
