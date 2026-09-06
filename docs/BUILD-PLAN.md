@@ -203,14 +203,36 @@ Acceptance: Missing/incompatible evidence yields structured `UNKNOWN` inputs; no
 
 **Produces:** Current raw reads, five-rule `PolicyV1`, per-rule decision.
 
-- [ ] Pin one fork block for each curated vault and test every required ERC-4626 method.
-- [ ] Preserve call value/revert and adapter interpretation separately.
-- [ ] Write policy-schema tests for decimal strings, five supported rules, no unknown keys, bounded windows, and valid owner address.
-- [ ] Implement truth table: any fail → fail; otherwise any required unknown → unknown; all pass → pass.
-- [ ] Add test where a documented non-standard `maxWithdraw == 0` becomes `UNKNOWN`, not `FAIL` or `PASS`.
-- [ ] Add optional natural-language compiler behind an interface; test invalid provider JSON never reaches evaluator.
-- [ ] Run policy unit and chain fork tests.
-- [ ] Commit as `feat(tr4ce): evaluate typed vault policy`.
+- [x] Pin one fork block for each curated vault and test every required ERC-4626 method.
+- [x] Preserve call value/revert and adapter interpretation separately.
+- [x] Write policy-schema tests for decimal strings, five supported rules, no unknown keys, bounded windows, and valid owner address.
+- [x] Implement truth table: any fail → fail; otherwise any required unknown → unknown; all pass → pass.
+- [x] Add test where a documented non-standard `maxWithdraw == 0` becomes `UNKNOWN`, not `FAIL` or `PASS`.
+- [x] Add optional natural-language compiler behind an interface; test invalid provider JSON never reaches evaluator.
+- [x] Run policy unit and chain fork tests.
+- [x] Commit as `feat(tr4ce): evaluate typed vault policy`.
+
+> **Deviation from TECH-STACK section 9 ("Anvil/fork + viem"):** the fork tests are direct
+> `eth_call`s at pinned blocks against an archival provider rather than an anvil fork. The binding
+> constraint in that section is the sentence after it — "Do not mock the EVM behavior that the
+> product claims to verify" — which pinned real calls satisfy, with identical values and no process
+> to manage. Anvil belongs to Task 7, which needs a writable fork to simulate state-changing calls.
+>
+> **`packages/domain/src/policy.ts` was made strict.** `z.object` silently strips unknown keys, so
+> the shipped schema would have accepted an LLM-authored policy carrying an invented operator and
+> quietly discarded it. `policyRuleResultSchema` is strict for a sharper reason: it is what the
+> evaluator emits, and a loose schema there would leave "a model cannot mark a rule pass" resting on
+> convention rather than on the type system.
+>
+> **Two rules need facts the evidence draft cannot carry**, both resolved by the caller through
+> `packages/chain`: the vault's deployment timestamp, without which `minimumHistory` cannot tell a
+> too-young vault (FAIL) from history nobody indexed (UNKNOWN); and the owner the account reads were
+> taken for, without which evidence gathered for one wallet could satisfy a rule written about
+> another.
+>
+> **`previewDeposit`, `previewRedeem`, `maxRedeem` and `totalSupply` are read and probed but feed no
+> rule.** PRD section 8.1 requires them recorded with raw outcomes; Task 7 is what consumes the
+> previews. Noted so nobody hunts for a missing rule.
 
 Acceptance: Manual typed policy works with the LLM disabled; the LLM cannot add an operator or mark a rule pass.
 
