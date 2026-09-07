@@ -121,7 +121,7 @@ export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
       <section className={styles.action}>
         <div>
           <h2 className={`display ${styles.actionTitle}`}>Ready to act on this evidence?</h2>
-          <p>Review the exact unsigned calldata before any wallet approval — preparation is not execution.</p>
+          <p>Review the exact unsigned calldata before any wallet approval. Preparation is not execution.</p>
         </div>
         <Link className="pill pillGreen" href="/actions/act_gauntletDeposit01">Prepare action</Link>
       </section>

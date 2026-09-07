@@ -13,7 +13,7 @@ export function SiteFooter() {
             Verifiable vault evidence. Observations pinned to blocks, verdicts typed by policy, and
             every limitation kept attached. No custody. No guarantees.
           </p>
-          <p className={styles.footerNote}>Illustrative interface — values shown are not live provider output.</p>
+          <p className={styles.footerNote}>Illustrative interface. Values shown are not live provider output.</p>
         </div>
         <nav aria-label="Footer" className={styles.footerLinks}>
           <p className="monoLabel">Surface</p>
@@ -28,7 +28,7 @@ export function SiteFooter() {
           <a href="https://docs.base.org/" rel="noreferrer" target="_blank">Base network</a>
           <a href="https://github.com/0xlann/tr4ce-app" rel="noreferrer" target="_blank">Source</a>
         </div>
-        <p aria-hidden="true" className={styles.footerStamp}>TR4CE — ON THE RECORD</p>
+        <p aria-hidden="true" className={styles.footerStamp}>TR4CE · ON THE RECORD</p>
       </div>
     </footer>
   );

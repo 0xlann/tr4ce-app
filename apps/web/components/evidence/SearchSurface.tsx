@@ -32,7 +32,7 @@ export function SearchSurface() {
           </h1>
           <p className="lede" data-reveal data-reveal-delay="0.1">
             Curated USDC evidence on verified Base vault identities. The same typed five-rule policy
-            drives every verdict — switch it and watch each verdict follow.
+            drives every verdict. Switch it and watch each verdict follow.
           </p>
         </header>
 
@@ -64,7 +64,7 @@ export function SearchSurface() {
                 <div><dt>Withdrawal floor</dt><dd className="num">{formatUsdc(policy.minWithdrawableAssets.value)}</dd></div>
               </dl>
               <button className="pill pillGreen pillSmall" type="button">Use this policy</button>
-              <p className={styles.policyNote}>Illustrative preset — the hosted API wires this to live evidence.</p>
+              <p className={styles.policyNote}>Illustrative preset. The hosted API wires this to live evidence.</p>
             </div>
           </aside>
 
@@ -156,7 +156,7 @@ export function SearchSurface() {
               </form>
               {address.length > 0 ? (
                 <p className={styles.addressNote} role="status">
-                  Illustrative diagnostics only — the hosted API will verify{" "}
+                  Illustrative diagnostics only. The hosted API will verify{" "}
                   <code>{address}</code>.
                 </p>
               ) : null}
