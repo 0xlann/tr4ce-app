@@ -94,7 +94,7 @@ against roughly 25 ms to Supabase's Singapore region, across 134 integration tes
 
 ```bash
 # 1. Schema. The same migration runner, pointed at the hosted database.
-DATABASE_URL="$SUPABASE_DATABASE_URL" pnpm --filter @tr4ce/db migrate
+DATABASE_URL="$SUPABASE_SESSION_POOLER" pnpm --filter @tr4ce/db migrate
 
 # 2. Data. Data only — the schema was just built by step 1, and a dump carrying DDL would let the
 #    two databases drift while looking identical.
@@ -102,7 +102,7 @@ DATABASE_URL="$SUPABASE_DATABASE_URL" pnpm --filter @tr4ce/db migrate
 
 # 3. After the sink's first run against that database, if it ever runs there. The sink creates
 #    `cursors` and `substreams_history` itself, after migrations, so migration 0003 never saw them.
-DATABASE_URL="$SUPABASE_DATABASE_URL" pnpm --filter @tr4ce/db enable-rls
+DATABASE_URL="$SUPABASE_SESSION_POOLER" pnpm --filter @tr4ce/db enable-rls
 ```
 
 ### Row-level security is not optional here
