@@ -31,7 +31,7 @@ export function HomeHero() {
             <span className={styles.underline}><ScribbleUnderline size={340} /></span>
           </div>
           <p className={`lede ${styles.lede}`} data-reveal data-reveal-delay="0.24">
-            TR4CE turns vault observations into a typed policy verdict — with visible limitations,
+            TR4CE turns vault observations into a typed policy verdict: visible limitations,
             reproducible blocks, and no custody.
           </p>
           <div className={styles.ctas} data-reveal data-reveal-delay="0.34">
@@ -39,7 +39,7 @@ export function HomeHero() {
             <a className="pill pillGhost" href="/reports/gauntlet-usdc-prime">Open a report specimen</a>
           </div>
           <p className={`monoLabel ${styles.note}`} data-reveal data-reveal-delay="0.42">
-            Illustrative fixture — no wallet or live provider is connected.
+            Illustrative fixture. No wallet or live provider is connected.
           </p>
         </div>
 

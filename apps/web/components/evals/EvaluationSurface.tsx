@@ -54,7 +54,7 @@ export function EvaluationSurface() {
             <h2>Typed evidence</h2>
             <p>
               Returns the exact report, rule-by-rule verdict, limitations, and unsigned action
-              boundary — reproducible at the named block.
+              boundary, reproducible at the named block.
             </p>
           </article>
         </section>

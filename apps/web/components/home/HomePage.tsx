@@ -19,7 +19,7 @@ const tickerItems = [
   "POLICY v1",
   "PASS / FAIL / UNKNOWN",
   "NO CUSTODY",
-  "OBSERVED — NOT PROMISED",
+  "OBSERVED / NOT PROMISED",
 ];
 
 const pairs = [
@@ -134,7 +134,7 @@ export function HomePage() {
             <article className={styles.vocabItem} data-reveal>
               <StatusStamp reason="The shown evidence meets every required rule." size="feature" status="PASS" />
               <h3>Evidence meets the policy.</h3>
-              <p>PASS is a policy conclusion at a named block — not a safety or yield promise.</p>
+              <p>PASS is a policy conclusion at a named block, not a safety or yield promise.</p>
             </article>
             <article className={styles.vocabItem} data-reveal data-reveal-delay="0.08">
               <StatusStamp reason="At least one required threshold was not met." size="feature" status="FAIL" />
@@ -173,7 +173,7 @@ export function HomePage() {
               </span>
               <p className={styles.tallAfter}>Evidence</p>
               <p className={styles.tallCopy}>
-                A treasury should not run on hope. TR4CE shows what a vault actually did — at a block
+                A treasury should not run on hope. TR4CE shows what a vault actually did, at a block
                 anyone can re-check.
               </p>
             </article>
@@ -188,7 +188,7 @@ export function HomePage() {
               “A return <em className="serifAccent">without a trail</em> is only a claim.”
             </p>
             <p className={styles.manifestoCopy} data-reveal data-reveal-delay="0.12">
-              Every conclusion keeps its limits and block context attached — because evidence you
+              Every conclusion keeps its limits and block context attached. Evidence you
               cannot reproduce is marketing.
             </p>
             <div className={styles.manifestoFacts} data-reveal data-reveal-delay="0.2">

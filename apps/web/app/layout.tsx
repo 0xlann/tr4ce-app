@@ -25,7 +25,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TR4CE — verifiable vault evidence",
+  title: "TR4CE · verifiable vault evidence",
   description:
     "Evidence-first ERC-4626 vault reports. Block-pinned observations, a typed five-rule policy, and every limitation kept attached.",
   icons: { icon: "/icon-logo-t.png" },
