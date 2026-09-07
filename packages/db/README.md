@@ -80,3 +80,53 @@ replayed as a pass.
 
 Note the DSN scheme difference: the sink CLI rejects `postgresql://` and accepts only `psql://` or
 `postgres://`, so `SUBSTREAMS_SINK_DSN` is kept separate from `DATABASE_URL`.
+
+## Deploying to a hosted database
+
+The application talks plain PostgreSQL through `DATABASE_URL` and contains no provider-specific
+code, so the target is a configuration choice rather than an architectural one. Supabase is what
+these instructions assume; anything that speaks PostgreSQL 15+ works the same way.
+
+Local PostgreSQL stays. It is not a fallback — it is where development and the integration suites
+run, and `provisionTestDatabase` refuses a hosted hostname because its first act is
+`DROP DATABASE ... WITH (FORCE)`. Measured on one Linux machine: 0.667 ms per round trip locally
+against roughly 25 ms to Supabase's Singapore region, across 134 integration tests.
+
+```bash
+# 1. Schema. The same migration runner, pointed at the hosted database.
+DATABASE_URL="$SUPABASE_SESSION_POOLER" pnpm --filter @tr4ce/db migrate
+
+# 2. Data. Data only — the schema was just built by step 1, and a dump carrying DDL would let the
+#    two databases drift while looking identical.
+./scripts/copy-to-supabase.sh
+
+# 3. After the sink's first run against that database, if it ever runs there. The sink creates
+#    `cursors` and `substreams_history` itself, after migrations, so migration 0003 never saw them.
+DATABASE_URL="$SUPABASE_SESSION_POOLER" pnpm --filter @tr4ce/db enable-rls
+```
+
+### Row-level security is not optional here
+
+Supabase publishes every table in `public` through PostgREST, reachable with the anon key — a value
+that is public by design and shipped in the frontend bundle. A table there without row-level
+security is readable, and usually writable, by anyone who opens the network tab.
+
+Migration 0003 enables RLS on every table and defines no policy, which denies everything. The roles
+that own the tables are unaffected: PostgreSQL exempts a table's owner from RLS unless
+`FORCE ROW LEVEL SECURITY` is set, which it deliberately is not. `rls.integration.test.ts` fails if
+any table is left uncovered, and asserts the owner exemption is still in place — without it the API
+and the worker would read empty tables and write nothing.
+
+### What still needs a host that stays running
+
+The Substreams sink is a streaming consumer holding a cursor; it cannot run on a serverless
+platform. For a demo it does not need to: run it locally until the database is populated, copy the
+result up, and deploy the API and web against the hosted database. Continuous indexing needs an
+always-on host — and once that host exists, PostgreSQL on it is both cheaper and far faster for the
+sink and worker, which are the chattiest consumers. `pg_dump | psql` moves between the two.
+
+### Free tier
+
+A free Supabase project pauses after 7 days without activity, and a paused project is an offline
+demo. Either keep something touching it on a schedule, or move to a paid plan before any window
+where the demo has to work unattended.
