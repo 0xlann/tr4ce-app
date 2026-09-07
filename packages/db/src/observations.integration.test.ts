@@ -89,6 +89,7 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
     expect(applied.applied).toEqual([
       "0001_registry_observations.sql",
       "0002_reports_and_policies.sql",
+      "0003_deny_anonymous_access.sql",
     ]);
     // The sink owns `cursors`; the application never creates it, so the test stands in.
     await db.execute(
