@@ -25,6 +25,9 @@ export const apiErrorCodeSchema = z.enum([
   "INCOMPLETE_EVIDENCE",
   "INVALID_POLICY",
   "REPORT_NOT_FOUND",
+  /* An action the chain will not accept right now — a short balance, a limit, a reverted preview. */
+  "ACTION_NOT_AVAILABLE",
+  "ACTION_NOT_FOUND",
   "INTERNAL_ERROR",
 ]);
 export type ApiErrorCode = z.infer<typeof apiErrorCodeSchema>;

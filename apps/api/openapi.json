@@ -101,7 +101,7 @@
             }
           },
           "409": {
-            "description": "The observations needed to answer do not exist yet.",
+            "description": "The observations or chain state needed to answer do not allow it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -198,7 +198,7 @@
             }
           },
           "409": {
-            "description": "The observations needed to answer do not exist yet.",
+            "description": "The observations or chain state needed to answer do not allow it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -213,6 +213,204 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EvaluatePolicyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/actions/prepare": {
+      "post": {
+        "operationId": "prepareAction",
+        "summary": "Build the unsigned calls for a deposit or redemption, and simulate the first.",
+        "description": "Returns unsigned transactions only. TR4CE never signs and never submits: the wallet owner approves each call, and only the first unsent call is simulated because the second reverts until the first has landed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The prepared action, with the first call simulated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body or query does not match the schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The observations or chain state needed to answer do not allow it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "This deployment has no chain configured for actions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/actions/{id}": {
+      "get": {
+        "operationId": "getActionStatus",
+        "summary": "Whether a prepared action may still be signed, judged now.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^act_[0-9a-f]{32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The action's standing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "This deployment has no chain configured for actions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/actions/{id}/submitted": {
+      "post": {
+        "operationId": "reportActionSubmission",
+        "summary": "Report the transaction hash a wallet produced.",
+        "description": "The only route by which a transaction hash enters TR4CE, and it arrives as a report about something that already happened in the caller's wallet.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^act_[0-9a-f]{32}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The action's standing after the report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body or query does not match the schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The observations or chain state needed to answer do not allow it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "This deployment has no chain configured for actions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -239,6 +437,8 @@
                   "INCOMPLETE_EVIDENCE",
                   "INVALID_POLICY",
                   "REPORT_NOT_FOUND",
+                  "ACTION_NOT_AVAILABLE",
+                  "ACTION_NOT_FOUND",
                   "INTERNAL_ERROR"
                 ]
               },
@@ -1531,6 +1731,451 @@
           "version",
           "status",
           "rules"
+        ],
+        "additionalProperties": false
+      },
+      "PrepareActionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "vaultAddress": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "deposit",
+              "redeem"
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "receiver": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "reportId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^trc_[0-9a-f]{32}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "chainId",
+          "vaultAddress",
+          "operation",
+          "owner",
+          "receiver",
+          "amount"
+        ],
+        "additionalProperties": false
+      },
+      "PreparedActionResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "action": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "1.0.0"
+              },
+              "actionId": {
+                "type": "string",
+                "pattern": "^act_[A-Za-z0-9]+$"
+              },
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "deposit",
+                  "redeem"
+                ]
+              },
+              "vault": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "asset": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "receiver": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "amount": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "transactions": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "chainId": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{40}$"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]*$"
+                    },
+                    "value": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)$"
+                    }
+                  },
+                  "required": [
+                    "chainId",
+                    "to",
+                    "data",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "simulation": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "SUCCEEDED",
+                      "FAILED"
+                    ]
+                  },
+                  "blockNumber": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "blockHash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "gasEstimate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reasonCodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "MISSING_OBSERVATION",
+                        "STALE_EVIDENCE",
+                        "INCOMPATIBLE_ASSET",
+                        "INCOMPATIBLE_IMPLEMENTATION",
+                        "CALL_REVERTED",
+                        "UNSUPPORTED_CAPABILITY",
+                        "AMBIGUOUS_CAPABILITY",
+                        "UNSUPPORTED_VAULT",
+                        "PROVIDER_UNAVAILABLE",
+                        "REORG_INVALIDATED",
+                        "INVALID_POLICY",
+                        "SIMULATION_REVERTED",
+                        "SIMULATION_STALE",
+                        "WALLET_CONTEXT_CHANGED"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "status",
+                  "blockNumber",
+                  "blockHash",
+                  "expiresAt",
+                  "gasEstimate",
+                  "reasonCodes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "actionId",
+              "operation",
+              "vault",
+              "asset",
+              "owner",
+              "receiver",
+              "amount",
+              "transactions",
+              "simulation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "PreparedActionV1": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "actionId": {
+            "type": "string",
+            "pattern": "^act_[A-Za-z0-9]+$"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "deposit",
+              "redeem"
+            ]
+          },
+          "vault": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "asset": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "receiver": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "transactions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "chainId": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "to": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{40}$"
+                },
+                "data": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]*$"
+                },
+                "value": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)$"
+                }
+              },
+              "required": [
+                "chainId",
+                "to",
+                "data",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "simulation": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "SUCCEEDED",
+                  "FAILED"
+                ]
+              },
+              "blockNumber": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "blockHash": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "gasEstimate": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reasonCodes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "MISSING_OBSERVATION",
+                    "STALE_EVIDENCE",
+                    "INCOMPATIBLE_ASSET",
+                    "INCOMPATIBLE_IMPLEMENTATION",
+                    "CALL_REVERTED",
+                    "UNSUPPORTED_CAPABILITY",
+                    "AMBIGUOUS_CAPABILITY",
+                    "UNSUPPORTED_VAULT",
+                    "PROVIDER_UNAVAILABLE",
+                    "REORG_INVALIDATED",
+                    "INVALID_POLICY",
+                    "SIMULATION_REVERTED",
+                    "SIMULATION_STALE",
+                    "WALLET_CONTEXT_CHANGED"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "status",
+              "blockNumber",
+              "blockHash",
+              "expiresAt",
+              "gasEstimate",
+              "reasonCodes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "actionId",
+          "operation",
+          "vault",
+          "asset",
+          "owner",
+          "receiver",
+          "amount",
+          "transactions",
+          "simulation"
+        ],
+        "additionalProperties": false
+      },
+      "ActionStatusResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "actionId": {
+            "type": "string",
+            "pattern": "^act_[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "prepared",
+              "simulated",
+              "submitted",
+              "confirmed",
+              "reverted",
+              "expired",
+              "invalidated"
+            ]
+          },
+          "signable": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "actionId",
+          "status",
+          "signable",
+          "reason",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "ReportSubmissionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "transactionHash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          }
+        },
+        "required": [
+          "chainId",
+          "transactionHash"
         ],
         "additionalProperties": false
       }

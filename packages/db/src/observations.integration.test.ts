@@ -90,6 +90,7 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
       "0001_registry_observations.sql",
       "0002_reports_and_policies.sql",
       "0003_deny_anonymous_access.sql",
+      "0004_prepared_actions.sql",
     ]);
     // The sink owns `cursors`; the application never creates it, so the test stands in.
     await db.execute(
@@ -124,7 +125,8 @@ describe.skipIf(url === undefined)("promotion and reorg reconciliation", () => {
     // Truncate rather than re-migrate: the schema is the thing under test and rebuilding it per
     // test would hide a constraint that only bites on the second insert.
     await db.execute(
-      sql`TRUNCATE rule_result, report_observation, evidence_report, rpc_observation,
+      sql`TRUNCATE transaction_receipt, simulation, prepared_action,
+                   rule_result, report_observation, evidence_report, rpc_observation,
                    reorg_invalidation, vault_flow, vault_snapshot, indexer_cursor,
                    raw_erc4626_deposit, raw_erc4626_withdraw, raw_erc4626_share_transfer, raw_erc4626_vault_snapshot`,
     );

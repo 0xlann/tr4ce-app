@@ -300,15 +300,42 @@ Acceptance: Repeating a request over identical inputs returns the same report; H
 
 **Produces:** Unsigned action arrays, bound simulation, status tracking.
 
-- [ ] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
-- [ ] Build calls directly to verified asset/vault; refuse unlimited allowance.
-- [ ] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
-- [ ] Persist no signature; accept transaction hash only after wallet submission.
-- [ ] Decode receipt events and show preview-versus-actual values.
-- [ ] Run fork and API tests.
-- [ ] Commit as `feat(tr4ce): prepare simulated vault actions`.
+- [x] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
+- [x] Build calls directly to verified asset/vault; refuse unlimited allowance.
+- [x] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
+- [x] Persist no signature; accept transaction hash only after wallet submission.
+- [x] Decode receipt events and show preview-versus-actual values.
+- [x] Run fork and API tests.
+- [x] Commit as `feat(tr4ce): prepare simulated vault actions`.
 
-Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation.
+> **Two findings the Anvil fork produced**, both now behaviour rather than surprises.
+>
+> The second call of an approve-plus-deposit pair cannot be simulated before the first lands — it
+> reverts for want of the allowance. `nextCallToSimulate` states that, and the API simulates only
+> the next unsent call: attaching a success status and a gas figure to the deposit would have
+> claimed something nobody had established. Once the approval is mined the block has moved, so the
+> deposit needs its own simulation anyway, which is the ordinary binding rule rather than a special
+> case.
+>
+> On the Morpho vault `maxRedeem` sits fractionally below the owner's own share balance — about one
+> part in a hundred million, from the rounding that protects the vault. A "redeem everything" button
+> wired to `balanceOf` therefore builds a transaction the chain refuses. Both arms are tested.
+>
+> **The no-signing guarantee is checked, not asserted.** Two tests read every non-test source file
+> in `packages/chain` and `apps/api` and fail if any names viem's wallet half — a wallet client
+> constructed at runtime type-checks perfectly well, so types alone would not have carried the
+> claim. Both were verified by introducing a submission path and watching them fail.
+>
+> **Deviation from the file list:** the calldata builders live in `packages/chain/src/prepare.ts`
+> rather than split across `prepare-deposit.ts` and `prepare-redeem.ts`. They share every
+> precondition helper and the failure type; two files would have meant one importing the other for
+> no gain in navigability.
+>
+> **`preparedActionV1Schema` changed shape.** It held a single `unsignedTransaction`, which cannot
+> express a deposit that needs an approval first. Now `transactions`, an array — matching what this
+> task, the ERD, and the action console's own copy already assumed.
+
+Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation. Both verified: the source-level checks above cover the first, and `checkSignable` is exercised by mutating each of the eight bound fields on its own — an aggregate check would pass while seven went unbound.
 
 ## Task 8: Expose MCP tools and public agent skill
 

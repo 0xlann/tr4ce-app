@@ -3,6 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  actionKindSchema,
+  actionStatusSchema,
   callStatusSchema,
   flowKindSchema,
   invalidationSubjectKindSchema,
@@ -13,6 +15,7 @@ import {
   policySourceSchema,
   reasonCodeSchema,
   reportStatusSchema,
+  revertClassSchema,
   ruleResultStatusSchema,
   transferKindSchema,
   vaultStatusSchema,
@@ -44,6 +47,7 @@ const read = (file: string) => readFileSync(join(migrationsDirectory, file), "ut
  */
 const registry = read("0001_registry_observations.sql");
 const reports = read("0002_reports_and_policies.sql");
+const actions = read("0004_prepared_actions.sql");
 
 /** Pull the quoted values out of `CONSTRAINT <name> CHECK (… IN ('a', 'b', …))`. */
 function checkConstraintValues(migration: string, constraintName: string): string[] {
@@ -94,6 +98,9 @@ describe("enum CHECK constraints match the shared schema", () => {
     [reports, "report_observation_type_check", observationTypeSchema.options],
     [reports, "report_observation_purpose_check", observationPurposeSchema.options],
     [reports, "rule_result_status_check", ruleResultStatusSchema.options],
+    [actions, "prepared_action_kind_check", actionKindSchema.options],
+    [actions, "prepared_action_status_check", actionStatusSchema.options],
+    [actions, "simulation_revert_class_check", revertClassSchema.options],
   ];
 
   for (const [migration, constraint, options] of cases) {
@@ -182,6 +189,49 @@ describe("integrity rules a schema differ cannot infer", () => {
     // about this database rather than an assumption about every database.
     expect(reports).toContain("EXISTS (SELECT 1 FROM evidence_report)");
     expect(reports).toContain("holds rows; 0002 will not drop it");
+  });
+
+  it("stores no signature anywhere in the action tables", () => {
+    /*
+     * ERD section 7 in four words: "No signature is stored." Checked against the DDL because a
+     * column is the only way one could be, and the wording of that sentence is easy to honour in a
+     * review and forget in a migration.
+     */
+    const ddl = actions.replaceAll(/--[^\n]*/g, "");
+
+    for (const forbidden of ["signature", "signed_", "private_key", "mnemonic", "raw_transaction"]) {
+      expect(ddl).not.toMatch(new RegExp(forbidden, "i"));
+    }
+  });
+
+  it("ties an action's terminal reason to its terminal status", () => {
+    // "invalidated" with no reason tells a user nothing about whether resimulating would help.
+    expect(actions).toContain(
+      "CHECK ((status IN ('expired', 'invalidated')) = (invalidated_reason IS NOT NULL))",
+    );
+  });
+
+  it("ties a successful simulation to a gas figure and a failed one to a revert class", () => {
+    // The same "missing evidence stays explicit" rule as vault_snapshot.call_errors: there is no
+    // gas figure for a transaction that did not happen, and a zero would read as a free one.
+    expect(actions).toContain(
+      "CHECK (success = (gas_estimate IS NOT NULL AND revert_class = 'none'))",
+    );
+  });
+
+  it("moves every receipt confirmation column together", () => {
+    // A hash is known long before a receipt is. Half-observed confirmation must not read as
+    // confirmed.
+    expect(actions).toContain("(confirmed_block_number IS NULL) = (confirmed_block_hash IS NULL)");
+    expect(actions).toContain("(confirmed_block_number IS NULL) = (status IS NULL)");
+  });
+
+  it("secures the action tables, which are the most sensitive in the schema", () => {
+    // prepared_action ties a wallet address to what it was about to do. Migration 0003 ran before
+    // these tables existed, so 0004 has to enable RLS itself.
+    for (const table of ["prepared_action", "simulation", "transaction_receipt"]) {
+      expect(actions).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+    }
   });
 
   it("stores a provider key on an RPC observation and never a credential", () => {

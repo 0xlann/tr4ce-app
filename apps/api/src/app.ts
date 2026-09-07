@@ -3,10 +3,14 @@ import { evaluatePolicy, validatePolicy } from "@tr4ce/policy";
 import { Hono } from "hono";
 
 import {
+  actionStatusResponseSchema,
   createReportRequestSchema,
   evaluatePolicyRequestSchema,
   evaluatePolicyResponseSchema,
+  prepareActionRequestSchema,
+  preparedActionResponseSchema,
   reportResponseSchema,
+  reportSubmissionRequestSchema,
   vaultListResponseSchema,
 } from "./contract.js";
 import { ApiFailure, invalidRequest } from "./errors.js";
@@ -16,6 +20,12 @@ import {
   fetchReport,
   type ChainTime,
 } from "./services/evidence-service.js";
+import {
+  actionSignability,
+  prepareAction,
+  reportSubmission,
+  type ActionChain,
+} from "./services/action-service.js";
 import { identityOf, listVaults, requireVault } from "./services/registry-service.js";
 
 /**
@@ -34,6 +44,16 @@ import { identityOf, listVaults, requireVault } from "./services/registry-servic
 export interface AppOptions {
   db: Database;
   chain: ChainTime;
+  /**
+   * The action half of the chain, kept separate from `ChainTime`.
+   *
+   * Optional: an API deployed without it still serves evidence and policy. The action routes then
+   * answer 501 rather than pretending to prepare something, which is the honest failure for a
+   * capability that was never wired up.
+   */
+  actionChain?: ActionChain;
+  /** Names the provider on stored simulations. Never a credential. */
+  providerKey?: string;
   calculationVersion: string;
   streamKey: string;
   blockSeconds: number;
@@ -54,6 +74,16 @@ export function createApp(options: AppOptions) {
     calculationVersion: options.calculationVersion,
     now,
   };
+
+  const actions =
+    options.actionChain === undefined
+      ? null
+      : {
+          db: options.db,
+          chain: options.actionChain,
+          providerKey: options.providerKey ?? "unspecified",
+          now,
+        };
 
   const app = new Hono();
 
@@ -147,6 +177,59 @@ export function createApp(options: AppOptions) {
     );
   });
 
+  app.post("/v1/actions/prepare", async (context) => {
+    const service = requireActionChain(actions);
+    const parsed = prepareActionRequestSchema.safeParse(await readJson(context.req.raw));
+
+    if (!parsed.success) {
+      throw invalidRequest(parsed.error);
+    }
+
+    const vault = await requireVault(registry, parsed.data.chainId, parsed.data.vaultAddress);
+    const action = await prepareAction(service, parsed.data, vault);
+
+    // 200, not 201: preparing is idempotent on the binding, so a repeated request under unchanged
+    // conditions names the action that already exists rather than creating another.
+    return context.json(
+      preparedActionResponseSchema.parse({ schemaVersion: "1.0.0", action }),
+    );
+  });
+
+  app.get("/v1/actions/:id", async (context) => {
+    const service = requireActionChain(actions);
+
+    // Judged against the chain now, not read back from the row. The stored status says what was
+    // true when it was written, and the binding exists because the world moves afterwards.
+    return context.json(
+      actionStatusResponseSchema.parse(
+        await actionSignability(service, context.req.param("id")),
+      ),
+    );
+  });
+
+  app.post("/v1/actions/:id/submitted", async (context) => {
+    /*
+     * The only route by which a transaction hash enters TR4CE, and it enters as a report about
+     * something that already happened in the caller's wallet. Nothing here submits (PRD TR-F-043).
+     */
+    const service = requireActionChain(actions);
+    const parsed = reportSubmissionRequestSchema.safeParse(await readJson(context.req.raw));
+
+    if (!parsed.success) {
+      throw invalidRequest(parsed.error);
+    }
+
+    return context.json(
+      actionStatusResponseSchema.parse(
+        await reportSubmission(service, {
+          actionId: context.req.param("id"),
+          chainId: parsed.data.chainId,
+          transactionHash: parsed.data.transactionHash,
+        }),
+      ),
+    );
+  });
+
   app.notFound((context) =>
     context.json(
       new ApiFailure("REPORT_NOT_FOUND", 404, `No route for ${context.req.path}.`).toBody(),
@@ -172,6 +255,19 @@ export function createApp(options: AppOptions) {
 }
 
 export type App = ReturnType<typeof createApp>;
+
+/** Refuse action routes on a deployment that was never given a chain to prepare against. */
+function requireActionChain<T>(service: T | null): T {
+  if (service === null) {
+    throw new ApiFailure(
+      "INTERNAL_ERROR",
+      501,
+      "This deployment has no chain configured for actions.",
+    );
+  }
+
+  return service;
+}
 
 /** Read a JSON body, turning a malformed one into the same structured error as a schema failure. */
 async function readJson(request: Request): Promise<unknown> {

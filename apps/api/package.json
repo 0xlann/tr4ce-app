@@ -23,6 +23,7 @@
   "devDependencies": {
     "@tr4ce/test-vaults": "workspace:*",
     "@types/node": "24.10.1",
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.2",
+    "viem": "2.56.3"
   }
 }

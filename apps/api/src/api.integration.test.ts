@@ -126,7 +126,8 @@ describe.skipIf(url === undefined)("evidence API", () => {
 
   beforeEach(async () => {
     await db.execute(
-      sql`TRUNCATE rule_result, report_observation, evidence_report, rpc_observation,
+      sql`TRUNCATE transaction_receipt, simulation, prepared_action,
+                   rule_result, report_observation, evidence_report, rpc_observation,
                    policy_rule, policy_version, policy, wallet,
                    vault_flow, vault_snapshot, indexer_cursor`,
     );

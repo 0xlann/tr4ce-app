@@ -1,11 +1,15 @@
 import {
+  actionStatusSchema,
   addressSchema,
   apiErrorSchema,
+  baseUnitStringSchema,
+  blockHashSchema,
   blockNumberStringSchema,
   chainIdSchema,
   evidenceReportV1Schema,
   policyEvaluationSchema,
   policyV1Schema,
+  preparedActionV1Schema,
   vaultStatusSchema,
 } from "@tr4ce/domain";
 import { z } from "zod";
@@ -91,3 +95,53 @@ export const evaluatePolicyResponseSchema = z.strictObject({
 });
 
 export { apiErrorSchema };
+
+export const prepareActionRequestSchema = z.strictObject({
+  chainId: chainIdSchema,
+  vaultAddress: addressSchema,
+  operation: z.enum(["deposit", "redeem"]),
+  owner: addressSchema,
+  receiver: addressSchema,
+  /**
+   * Base units — assets for a deposit, shares for a redemption. A decimal string, never a JSON
+   * number: a uint256 amount does not survive a double.
+   */
+  amount: baseUnitStringSchema,
+  /** The report that motivated this, when one did. Evidence, never a precondition. */
+  reportId: z.string().regex(/^trc_[0-9a-f]{32}$/).nullish(),
+});
+export type PrepareActionRequest = z.infer<typeof prepareActionRequestSchema>;
+
+export const preparedActionResponseSchema = z.strictObject({
+  schemaVersion: z.literal("1.0.0"),
+  action: preparedActionV1Schema,
+});
+
+/**
+ * Whether an action may still be signed, judged now rather than when it was stored.
+ *
+ * `signable` is the field a caller acts on. `status` says where the action stands, and the two are
+ * separate because a submitted action is not signable for a completely different reason than an
+ * expired one.
+ */
+export const actionStatusResponseSchema = z.strictObject({
+  schemaVersion: z.literal("1.0.0"),
+  actionId: z.string().regex(/^act_[0-9a-f]{32}$/),
+  status: actionStatusSchema,
+  signable: z.boolean(),
+  /** Null when signable. Otherwise which of the four ways it stopped being so. */
+  reason: z.string().nullable(),
+  expiresAt: z.string().datetime(),
+});
+export type ActionStatusResponse = z.infer<typeof actionStatusResponseSchema>;
+
+export const reportSubmissionRequestSchema = z.strictObject({
+  chainId: chainIdSchema,
+  /**
+   * The hash the caller's wallet produced.
+   *
+   * TR4CE never submits, so this is the only way a hash arrives — as a report about something that
+   * already happened elsewhere (PRD TR-F-043).
+   */
+  transactionHash: blockHashSchema,
+});
