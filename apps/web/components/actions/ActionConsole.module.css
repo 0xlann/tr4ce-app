@@ -157,3 +157,10 @@
 @media (max-width: 880px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+/* One prepared call. Stacked rather than joined, so the approval and the deposit stay countable. */
+.call + .call {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ink-hairline);
+}

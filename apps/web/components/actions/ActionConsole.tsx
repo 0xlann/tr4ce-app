@@ -69,7 +69,7 @@ export function ActionConsole({ action }: ActionConsoleProps) {
             <p className="monoLabel">Operation</p>
             <strong className={styles.panelTitle}>{action.operation}</strong>
             <dl className={styles.list}>
-              <div><dt>Network</dt><dd>Base · chain {action.unsignedTransaction.chainId}</dd></div>
+              <div><dt>Network</dt><dd>Base · chain {action.transactions[0]!.chainId}</dd></div>
               <div><dt>Vault</dt><dd><code className={styles.hash}>{action.vault}</code></dd></div>
               <div><dt>Asset</dt><dd><code className={styles.hash}>{action.asset}</code></dd></div>
               <div><dt>Amount</dt><dd>10,000 USDC <small className={styles.sub}>{action.amount} base units</small></dd></div>
@@ -86,8 +86,23 @@ export function ActionConsole({ action }: ActionConsoleProps) {
               <div><dt>Calldata effect</dt><dd>Exact approval then direct deposit</dd></div>
             </dl>
             <div className={styles.calldata}>
-              <p className="monoLabel">Unsigned calldata</p>
-              <code>{action.unsignedTransaction.data}</code>
+              <p className="monoLabel">
+                Unsigned calldata · {action.transactions.length} transaction
+                {action.transactions.length === 1 ? "" : "s"}
+              </p>
+              {/*
+                Every call is shown, in signing order. A deposit is two transactions when the
+                owner's allowance falls short of the amount and one when it does not, so hiding any
+                of them would hide the approval in exactly the case a user needs to see it.
+              */}
+              {action.transactions.map((transaction, index) => (
+                <div className={styles.call} key={transaction.data}>
+                  <p className="monoLabel">
+                    {index + 1}. to {transaction.to}
+                  </p>
+                  <code>{transaction.data}</code>
+                </div>
+              ))}
             </div>
           </article>
         </section>
