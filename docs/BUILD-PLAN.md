@@ -333,7 +333,56 @@ Acceptance: Repeating a request over identical inputs returns the same report; H
 >
 > **`preparedActionV1Schema` changed shape.** It held a single `unsignedTransaction`, which cannot
 > express a deposit that needs an approval first. Now `transactions`, an array — matching what this
-> task, the ERD, and the action console's own copy already assumed.
+> task, the ERD, and the action console's own copy already assumed. Each entry carries its `kind`,
+> and the schema also carries `previewed`.
+>
+> ---
+>
+> **The first cut of this task shipped a flow that could not be completed.** Found by running the
+> approve-then-deposit sequence through the routes rather than through the chain: reporting the
+> approval's hash moved the action to `submitted`, and the deposit then had nowhere to go — it could
+> not be simulated, its hash could not be reported, and `transaction_receipt` had room for one row
+> per action. The fork test passed throughout, because it drives the chain directly and never asks
+> the API to represent the pair.
+>
+> The cause was one decision: the block was part of the action's identity. `calldata_hash` and the
+> `act_` id were both derived from the *simulation* binding, which is pinned to a block. ERD section
+> 7 puts `calldata_hash` on `prepared_action` and `block_number` on `simulation`, and this is why.
+>
+> What changed:
+>
+> - `actionDigest` covers chain, account, every call in signing order, and capability version —
+>   never the block. `bindingDigest` still covers one simulation, block included.
+> - **The action id is generated, not derived.** A report is a pure function of its observations, so
+>   naming it after them is right; an action is an intent to spend, and repeating one is legitimate.
+>   TR4CE's approval is exact, so a completed deposit leaves the allowance at zero and an identical
+>   second deposit is a second real action — under a content-derived id it would have been
+>   unpreparable forever. Idempotency moved to a partial unique index on `calldata_hash` covering
+>   only actions still awaiting signature, which is where it means something.
+> - `sent_count`, `previewed_amount` and `capability_version` on `prepared_action`; `call_index` on
+>   `simulation`; `call_index` and `actual_amount` on `transaction_receipt`. A CHECK refuses
+>   `submitted` while any call still lacks a hash.
+> - `report_id` became a composite foreign key to `(id, vault_id)`. It was a plain reference, so an
+>   action on one vault could cite a report about another — the bug `report_observation`'s own
+>   composite keys exist to prevent.
+> - **`POST /v1/actions/{id}/simulate`.** The acceptance clause says an action is non-signable
+>   *"until resimulation"*, and there was no resimulation path at all. It is also the only way the
+>   deposit of a pair is ever simulated.
+> - `GET /v1/actions/{id}` refuses to call an action signable when the newest simulation is for a
+>   different call than the one awaiting signature. Without that, a wallet could sign a deposit on
+>   an approval's gas estimate (TR-F-032). Verified by removing the check and watching the flow test
+>   fail.
+>
+> **Second deviation from ERD section 7:** `transaction_receipt` is keyed `(prepared_action_id,
+> call_index)`, where the ERD writes `prepared_action_id` UNIQUE. One receipt per action cannot
+> represent the approve-plus-deposit pair SMART-CONTRACT.md section 4 requires — the approval's hash
+> would overwrite the deposit's or have nowhere to go. Recorded here rather than left as an
+> undocumented difference, on the same terms as the content-derived report id in Task 6.
+>
+> **`invalidateAction` has no caller in this task.** It is the write side of the reorg path, which
+> `reorg_invalidation.subject_id` became TEXT for in Task 6. It is kept and tested rather than given
+> an invented caller: an expired budget is *not* a reason to write `expired`, because resimulating
+> revives the action and a terminal status would be a lie about that.
 
 Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation. Both verified: the source-level checks above cover the first, and `checkSignable` is exercised by mutating each of the eight bound fields on its own — an aggregate check would pass while seven went unbound.
 

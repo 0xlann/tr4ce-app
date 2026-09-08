@@ -226,6 +226,47 @@ describe("integrity rules a schema differ cannot infer", () => {
     expect(actions).toContain("(confirmed_block_number IS NULL) = (status IS NULL)");
   });
 
+  it("will not let an action be submitted while one of its calls has no hash", () => {
+    /*
+     * The constraint the whole two-call flow rests on. Without it the approval of an
+     * approve-plus-deposit pair could close the action and strand the deposit — which is exactly
+     * what happened before `sent_count` existed.
+     */
+    expect(actions).toContain(
+      "status NOT IN ('submitted', 'confirmed', 'reverted')\n            OR sent_count = jsonb_array_length(transactions_json)",
+    );
+    expect(actions).toContain(
+      "CHECK (sent_count >= 0 AND sent_count <= jsonb_array_length(transactions_json))",
+    );
+  });
+
+  it("keeps an action's report about the same vault the action targets", () => {
+    // A plain REFERENCES evidence_report (id) would let an action on vault A cite a report about
+    // vault B — the bug report_observation's own composite keys exist to prevent (ERD section 11).
+    const ddl = actions.replaceAll(/--[^\n]*/g, "");
+
+    expect(ddl).toContain(
+      "FOREIGN KEY (report_id, vault_id) REFERENCES evidence_report (id, vault_id)",
+    );
+    expect(ddl).not.toMatch(/report_id\s+TEXT\s+REFERENCES/);
+  });
+
+  it("scopes action idempotency to the ones still awaiting a signature", () => {
+    /*
+     * A plain UNIQUE on calldata_hash would make a second identical deposit unpreparable forever:
+     * TR4CE's approval is exact, so a completed deposit leaves the allowance back at zero and
+     * repeating it is a legitimate new intent.
+     */
+    expect(actions).toContain("CREATE UNIQUE INDEX IF NOT EXISTS prepared_action_live_binding_key");
+    expect(actions).toContain("WHERE status IN ('prepared', 'simulated')");
+  });
+
+  it("keys a receipt by call, not by action", () => {
+    // Deviation from ERD section 7, and a deliberate one: an approve-plus-deposit pair produces two
+    // hashes, and one row per action would leave the second nowhere to go.
+    expect(actions).toContain("PRIMARY KEY (prepared_action_id, call_index)");
+  });
+
   it("secures the action tables, which are the most sensitive in the schema", () => {
     // prepared_action ties a wallet address to what it was about to do. Migration 0003 ran before
     // these tables existed, so 0004 has to enable RLS itself.

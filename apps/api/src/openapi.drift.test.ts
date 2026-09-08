@@ -31,6 +31,7 @@ describe("the committed OpenAPI document", () => {
     expect(Object.keys(committed["paths"] as object).sort()).toEqual([
       "/v1/actions/prepare",
       "/v1/actions/{id}",
+      "/v1/actions/{id}/simulate",
       "/v1/actions/{id}/submitted",
       "/v1/policies/evaluate",
       "/v1/reports",

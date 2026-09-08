@@ -4,8 +4,10 @@ import {
   prepareDeposit as prepareDepositCalls,
   prepareRedeem as prepareRedeemCalls,
   simulateCall,
+  type ActionReceipt,
   type ChainClient,
 } from "@tr4ce/chain";
+import { TransactionReceiptNotFoundError } from "viem";
 import {
   insertReport,
   insertRuleResults,
@@ -424,6 +426,38 @@ export function actionChainFrom(client: ChainClient) {
 
     simulate(input: Parameters<typeof simulateCall>[1]) {
       return simulateCall(client, input);
+    },
+
+    /**
+     * Look up a receipt for a hash the caller reported.
+     *
+     * A read, and the only kind of transaction lookup this service does. Null when the node has no
+     * receipt yet: a hash is routinely reported before it is mined, and treating "not yet" as an
+     * error would turn a normal moment into a failure. TR4CE does not retry on its own — the caller
+     * reports the same hash again when they want another look.
+     */
+    async receipt(transactionHash: string): Promise<ActionReceipt | null> {
+      try {
+        const receipt = await client.getTransactionReceipt({
+          hash: transactionHash as `0x${string}`,
+        });
+
+        return {
+          status: receipt.status,
+          blockNumber: receipt.blockNumber,
+          blockHash: receipt.blockHash,
+          transactionHash: receipt.transactionHash,
+          gasUsed: receipt.gasUsed,
+          effectiveGasPrice: receipt.effectiveGasPrice ?? null,
+          logs: receipt.logs,
+        };
+      } catch (error) {
+        if (error instanceof TransactionReceiptNotFoundError) {
+          return null;
+        }
+
+        throw error;
+      }
     },
   };
 }

@@ -20,6 +20,8 @@ export interface ActionReceipt {
   blockHash: Hex;
   transactionHash: Hex;
   gasUsed: bigint;
+  /** What the sender actually paid per unit of gas. Null when the node did not report it. */
+  effectiveGasPrice: bigint | null;
   logs: readonly Log[];
 }
 

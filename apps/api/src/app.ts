@@ -24,6 +24,7 @@ import {
   actionSignability,
   prepareAction,
   reportSubmission,
+  simulateNextCall,
   type ActionChain,
 } from "./services/action-service.js";
 import { identityOf, listVaults, requireVault } from "./services/registry-service.js";
@@ -207,6 +208,24 @@ export function createApp(options: AppOptions) {
     );
   });
 
+  app.post("/v1/actions/:id/simulate", async (context) => {
+    /*
+     * Resimulate the next unsent call against the current block.
+     *
+     * The other half of Task 7's acceptance clause: an action stops being signable when a bound
+     * field moves, "until resimulation". This is the resimulation. It is also the only way the
+     * deposit of an approve-plus-deposit pair is ever simulated, because before the approval lands
+     * that call reverts and simulating it early would have claimed a success nobody established.
+     */
+    const service = requireActionChain(actions);
+
+    return context.json(
+      actionStatusResponseSchema.parse(
+        await simulateNextCall(service, context.req.param("id")),
+      ),
+    );
+  });
+
   app.post("/v1/actions/:id/submitted", async (context) => {
     /*
      * The only route by which a transaction hash enters TR4CE, and it enters as a report about
@@ -223,6 +242,7 @@ export function createApp(options: AppOptions) {
       actionStatusResponseSchema.parse(
         await reportSubmission(service, {
           actionId: context.req.param("id"),
+          callIndex: parsed.data.callIndex,
           chainId: parsed.data.chainId,
           transactionHash: parsed.data.transactionHash,
         }),

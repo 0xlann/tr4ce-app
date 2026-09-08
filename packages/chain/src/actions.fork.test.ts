@@ -588,6 +588,7 @@ describe.skipIf(rpcUrl === undefined || !anvilAvailable).sequential("prepared ac
       blockHash: receipt.blockHash,
       transactionHash: receipt.transactionHash,
       gasUsed: receipt.gasUsed,
+      effectiveGasPrice: receipt.effectiveGasPrice ?? null,
       logs: receipt.logs,
     };
   }

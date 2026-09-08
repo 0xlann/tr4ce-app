@@ -338,6 +338,66 @@
         }
       }
     },
+    "/v1/actions/{id}/simulate": {
+      "post": {
+        "operationId": "simulateNextActionCall",
+        "summary": "Simulate the next unsent call against the current block.",
+        "description": "Resimulation. An action stops being signable when a bound field moves, and this is what makes it signable again. It is also the only way the deposit of an approve-plus-deposit pair is ever simulated: before the approval lands, that call reverts.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^act_[0-9a-f]{32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The action's standing after the attempt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vault or report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The observations or chain state needed to answer do not allow it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "This deployment has no chain configured for actions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/actions/{id}/submitted": {
       "post": {
         "operationId": "reportActionSubmission",
@@ -1856,16 +1916,29 @@
                     "value": {
                       "type": "string",
                       "pattern": "^(0|[1-9][0-9]*)$"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "approve",
+                        "deposit",
+                        "redeem"
+                      ]
                     }
                   },
                   "required": [
                     "chainId",
                     "to",
                     "data",
-                    "value"
+                    "value",
+                    "kind"
                   ],
                   "additionalProperties": false
                 }
+              },
+              "previewed": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
               },
               "simulation": {
                 "type": "object",
@@ -1945,6 +2018,7 @@
               "receiver",
               "amount",
               "transactions",
+              "previewed",
               "simulation"
             ],
             "additionalProperties": false
@@ -2017,16 +2091,29 @@
                 "value": {
                   "type": "string",
                   "pattern": "^(0|[1-9][0-9]*)$"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "approve",
+                    "deposit",
+                    "redeem"
+                  ]
                 }
               },
               "required": [
                 "chainId",
                 "to",
                 "data",
-                "value"
+                "value",
+                "kind"
               ],
               "additionalProperties": false
             }
+          },
+          "previewed": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
           },
           "simulation": {
             "type": "object",
@@ -2106,6 +2193,7 @@
           "receiver",
           "amount",
           "transactions",
+          "previewed",
           "simulation"
         ],
         "additionalProperties": false
@@ -2147,6 +2235,159 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "callCount": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "sentCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "nextCallIndex": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "transactionHash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  },
+                  "status": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "success",
+                          "reverted"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "confirmedBlockNumber": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "previewed": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]*)$"
+                  },
+                  "actual": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]*)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "delta": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9][0-9]*)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "transactionHash",
+                  "status",
+                  "confirmedBlockNumber",
+                  "previewed",
+                  "actual",
+                  "delta"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "callIndex": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "success": {
+                  "type": "boolean"
+                },
+                "blockNumber": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)$"
+                },
+                "revertClass": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "reverted",
+                    "out_of_gas",
+                    "provider_unavailable",
+                    "unclassified"
+                  ]
+                },
+                "gasEstimate": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "callIndex",
+                "success",
+                "blockNumber",
+                "revertClass",
+                "gasEstimate",
+                "at"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -2155,7 +2396,12 @@
           "status",
           "signable",
           "reason",
-          "expiresAt"
+          "expiresAt",
+          "callCount",
+          "sentCount",
+          "nextCallIndex",
+          "outcome",
+          "attempts"
         ],
         "additionalProperties": false
       },
@@ -2168,6 +2414,11 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
           },
+          "callIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
           "transactionHash": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
@@ -2175,7 +2426,61 @@
         },
         "required": [
           "chainId",
+          "callIndex",
           "transactionHash"
+        ],
+        "additionalProperties": false
+      },
+      "SimulationAttempt": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "callIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          },
+          "revertClass": {
+            "type": "string",
+            "enum": [
+              "none",
+              "reverted",
+              "out_of_gas",
+              "provider_unavailable",
+              "unclassified"
+            ]
+          },
+          "gasEstimate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "callIndex",
+          "success",
+          "blockNumber",
+          "revertClass",
+          "gasEstimate",
+          "at"
         ],
         "additionalProperties": false
       }

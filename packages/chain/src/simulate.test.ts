@@ -2,6 +2,7 @@ import { keccak256 } from "viem";
 import { describe, expect, it } from "vitest";
 
 import {
+  actionDigest,
   bindingDigest,
   checkSignable,
   EXPIRY_BLOCKS,
@@ -9,6 +10,7 @@ import {
   type SimulationBinding,
   type SimulationResult,
 } from "./simulate.js";
+import type { PreparedCall } from "./prepare.js";
 
 /**
  * Task 7's acceptance clause: "changing any bound field makes the action non-signable until
@@ -196,5 +198,77 @@ describe("bindingDigest", () => {
     };
 
     expect(bindingDigest(right)).toBe(bindingDigest(left));
+  });
+});
+
+/**
+ * The action digest: what a *plan* is, as opposed to what one *simulation* of it is.
+ *
+ * The distinction is not cosmetic. Folding the block into an action's identity is what made a
+ * two-call deposit impossible to complete through the API — the approval and the deposit that
+ * follows it could never belong to the same action, because the block moved in between.
+ */
+describe("actionDigest", () => {
+  const call = (overrides: Partial<PreparedCall> = {}): PreparedCall => ({
+    chainId: 8453,
+    to: "0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61",
+    data: "0xdeadbeef",
+    value: "0",
+    kind: "deposit",
+    ...overrides,
+  });
+
+  const digest = (overrides: Partial<Parameters<typeof actionDigest>[0]> = {}) =>
+    actionDigest({
+      chainId: 8453,
+      account: "0x1111111111111111111111111111111111111111",
+      calls: [call()],
+      capabilityVersion: "metamorpho-1.1",
+      ...overrides,
+    });
+
+  it("does not move when the block does", () => {
+    // There is no block in the input at all, which is the point: an action outlives every
+    // simulation it accumulates, and on Base a block-bound identity would change every 2 seconds.
+    expect(digest()).toBe(digest());
+  });
+
+  it("covers every call, not just the first", () => {
+    /*
+     * A one-call deposit and the two-call form of the same deposit are different plans. If only the
+     * first call were covered, an approval-then-deposit would collide with an approval followed by
+     * something else entirely.
+     */
+    const one = digest({ calls: [call({ kind: "approve" })] });
+    const two = digest({ calls: [call({ kind: "approve" }), call()] });
+
+    expect(one).not.toBe(two);
+  });
+
+  it("depends on the order the calls must be signed in", () => {
+    const approve = call({ kind: "approve", data: "0x095ea7b3" });
+    const deposit = call();
+
+    expect(digest({ calls: [approve, deposit] })).not.toBe(digest({ calls: [deposit, approve] }));
+  });
+
+  it("changes when any covered field changes", () => {
+    // Field by field, for the same reason `checkSignable` is checked that way above: an aggregate
+    // assertion would pass while three of the four went uncovered.
+    const base = digest();
+
+    expect(digest({ chainId: 1 })).not.toBe(base);
+    expect(digest({ account: "0x2222222222222222222222222222222222222222" })).not.toBe(base);
+    expect(digest({ capabilityVersion: "metamorpho-1.2" })).not.toBe(base);
+    expect(digest({ calls: [call({ value: "1" })] })).not.toBe(base);
+    expect(digest({ calls: [call({ data: "0xfeedface" })] })).not.toBe(base);
+    expect(digest({ calls: [call({ to: "0x3333333333333333333333333333333333333333" })] })).not.toBe(base);
+    // The kind is covered too: an approval and a deposit to the same address with the same
+    // calldata would otherwise be the same plan.
+    expect(digest({ calls: [call({ kind: "approve" })] })).not.toBe(base);
+  });
+
+  it("ignores address casing, which a checksummed address changes and a chain does not", () => {
+    expect(digest({ account: "0X1111111111111111111111111111111111111111" })).toBe(digest());
   });
 });

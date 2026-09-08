@@ -1,11 +1,13 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
   index,
+  integer,
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -29,7 +31,13 @@ import { evidenceReport } from "./reports.js";
 export const preparedAction = pgTable(
   "prepared_action",
   {
-    /** `act_` plus a digest of the binding — content-derived, like a report id. */
+    /**
+     * `act_` plus 32 generated hex.
+     *
+     * Not content-derived, unlike a report id: an action is an intent to spend, and repeating one
+     * is legitimate. Idempotency lives on `prepared_action_live_binding_key` instead, which covers
+     * only actions still awaiting a signature.
+     */
     id: text("id").primaryKey(),
     walletId: uuid("wallet_id")
       .notNull()
@@ -42,10 +50,16 @@ export const preparedAction = pgTable(
     kind: text("kind").notNull(),
     chainId: bigint("chain_id", { mode: "number" }).notNull(),
     account: bytea("account").notNull(),
-    /** The binding digest. ERD section 7 calls it "immutable action identity". */
+    /** The action digest: chain, account, every call, capability version. Never the block. */
     calldataHash: bytea("calldata_hash").notNull(),
+    /** The seventh bound field. Kept so a later simulation binds to the same interpretation. */
+    capabilityVersion: text("capability_version").notNull(),
     /** Every unsigned call in signing order — one or two, depending on the observed allowance. */
     transactionsJson: jsonb("transactions_json").notNull(),
+    /** How many of those calls the caller has reported a hash for. */
+    sentCount: integer("sent_count").notNull().default(0),
+    /** Shares for a deposit, assets for a redemption. A preview, never a promise. */
+    previewedAmount: numeric("previewed_amount", { precision: 78, scale: 0 }).notNull(),
     status: text("status").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -55,6 +69,9 @@ export const preparedAction = pgTable(
     index("prepared_action_wallet_idx").on(table.walletId, table.createdAt),
     index("prepared_action_vault_idx").on(table.vaultId, table.createdAt),
     index("prepared_action_report_idx").on(table.reportId),
+    uniqueIndex("prepared_action_live_binding_key")
+      .on(table.calldataHash)
+      .where(sql`status IN ('prepared', 'simulated')`),
   ],
 );
 
@@ -71,6 +88,8 @@ export const simulation = pgTable(
     preparedActionId: text("prepared_action_id")
       .notNull()
       .references(() => preparedAction.id),
+    /** Which of the action's calls this attempt covered. */
+    callIndex: integer("call_index").notNull(),
     blockNumber: numeric("block_number", { precision: 78, scale: 0 }).notNull(),
     blockHash: bytea("block_hash").notNull(),
     account: bytea("account").notNull(),
@@ -88,18 +107,22 @@ export const simulation = pgTable(
 );
 
 /**
- * What the wallet did with a prepared action.
+ * What the wallet did with one call of a prepared action.
  *
  * Written only when a caller reports a hash. If the user signs and walks away, there is simply no
  * row — TR4CE does not poll for one, because polling would mean tracking transactions it never
  * agreed to be responsible for.
+ *
+ * Keyed per call rather than per action: an approve-plus-deposit pair produces two hashes, and one
+ * row per action would leave the second nowhere to go.
  */
 export const transactionReceipt = pgTable(
   "transaction_receipt",
   {
     preparedActionId: text("prepared_action_id")
-      .primaryKey()
+      .notNull()
       .references(() => preparedAction.id),
+    callIndex: integer("call_index").notNull(),
     chainId: bigint("chain_id", { mode: "number" }).notNull(),
     transactionHash: bytea("transaction_hash").notNull(),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
@@ -109,9 +132,14 @@ export const transactionReceipt = pgTable(
     status: text("status"),
     gasUsed: numeric("gas_used", { precision: 78, scale: 0 }),
     effectiveGasPrice: numeric("effective_gas_price", { precision: 78, scale: 0 }),
+    /** What the vault's event reported. Null when none was found; never the preview. */
+    actualAmount: numeric("actual_amount", { precision: 78, scale: 0 }),
     observedAt: timestamp("observed_at", { withTimezone: true }),
   },
-  (table) => [uniqueIndex("transaction_receipt_hash_key").on(table.chainId, table.transactionHash)],
+  (table) => [
+    primaryKey({ columns: [table.preparedActionId, table.callIndex] }),
+    uniqueIndex("transaction_receipt_hash_key").on(table.chainId, table.transactionHash),
+  ],
 );
 
 export const preparedActionRelations = relations(preparedAction, ({ one, many }) => ({

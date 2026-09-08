@@ -16,6 +16,7 @@ import {
   preparedActionResponseSchema,
   reportResponseSchema,
   reportSubmissionRequestSchema,
+  simulationAttemptSchema,
   vaultListResponseSchema,
   vaultSummarySchema,
 } from "./contract.js";
@@ -49,6 +50,7 @@ const registry = {
   PreparedActionV1: preparedActionV1Schema,
   ActionStatusResponse: actionStatusResponseSchema,
   ReportSubmissionRequest: reportSubmissionRequestSchema,
+  SimulationAttempt: simulationAttemptSchema,
 } as const;
 
 const ref = (name: keyof typeof registry) => ({ $ref: `#/components/schemas/${name}` });
@@ -191,6 +193,29 @@ export function buildOpenApiDocument(): unknown {
           responses: {
             "200": { description: "The action's standing.", content: json("ActionStatusResponse") },
             ...errorResponses(404, 501),
+          },
+        },
+      },
+      "/v1/actions/{id}/simulate": {
+        post: {
+          operationId: "simulateNextActionCall",
+          summary: "Simulate the next unsent call against the current block.",
+          description:
+            "Resimulation. An action stops being signable when a bound field moves, and this is what makes it signable again. It is also the only way the deposit of an approve-plus-deposit pair is ever simulated: before the approval lands, that call reverts.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "string", pattern: "^act_[0-9a-f]{32}$" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "The action's standing after the attempt.",
+              content: json("ActionStatusResponse"),
+            },
+            ...errorResponses(404, 409, 501),
           },
         },
       },

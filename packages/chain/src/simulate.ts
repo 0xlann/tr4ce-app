@@ -143,6 +143,37 @@ export function bindingDigest(binding: SimulationBinding): Hex {
   return keccak256(new TextEncoder().encode(canonical));
 }
 
+/**
+ * A digest of the durable half of an action: what is to be signed, by whom, on what chain.
+ *
+ * Deliberately excludes the block. `bindingDigest` above covers a *simulation*, which is pinned to
+ * one block and expires with it; this covers the *action*, which outlives every simulation it
+ * accumulates. Folding the block into both would mean an action's identity changed every two
+ * seconds on Base, so an approval and the deposit that follows it could never belong to the same
+ * action — and the two-call deposit SMART-CONTRACT.md section 4 requires would have no way to be
+ * represented at all.
+ *
+ * Every call is covered, in signing order. A one-call deposit and the two-call form of the same
+ * deposit are different plans and must not collide.
+ */
+export function actionDigest(input: {
+  chainId: number;
+  account: Address;
+  calls: readonly PreparedCall[];
+  capabilityVersion: string;
+}): Hex {
+  const canonical = [
+    input.chainId.toString(),
+    input.account.toLowerCase(),
+    input.capabilityVersion,
+    ...input.calls.map((call) =>
+      [call.to.toLowerCase(), keccak256(call.data).toLowerCase(), call.value, call.kind].join(":"),
+    ),
+  ].join("|");
+
+  return keccak256(new TextEncoder().encode(canonical));
+}
+
 export type SignabilityVerdict =
   | { signable: true }
   | { signable: false; reason: "BINDING_CHANGED" | "BLOCK_BUDGET_SPENT" | "TIME_BUDGET_SPENT" | "SIMULATION_FAILED" };

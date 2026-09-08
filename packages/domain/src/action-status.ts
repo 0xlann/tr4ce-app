@@ -42,6 +42,15 @@ export const signabilityReasonSchema = z.enum([
   "BLOCK_BUDGET_SPENT",
   "TIME_BUDGET_SPENT",
   "SIMULATION_FAILED",
+  /*
+   * The next unsent call has no simulation of its own yet.
+   *
+   * Distinct from SIMULATION_FAILED, which says the chain refused. This says nobody has asked it.
+   * The two-call deposit reaches this state the moment the approval's hash is reported: the
+   * deposit is next, and the approval's simulation says nothing about whether it will succeed
+   * (PRD TR-F-032). Resimulating is what clears it.
+   */
+  "NOT_SIMULATED",
 ]);
 export type SignabilityReason = z.infer<typeof signabilityReasonSchema>;
 
