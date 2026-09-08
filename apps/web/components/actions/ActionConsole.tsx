@@ -74,6 +74,15 @@ export function ActionConsole({ action }: ActionConsoleProps) {
               <div><dt>Asset</dt><dd><code className={styles.hash}>{action.asset}</code></dd></div>
               <div><dt>Amount</dt><dd>10,000 USDC <small className={styles.sub}>{action.amount} base units</small></dd></div>
               <div><dt>Owner / receiver</dt><dd><code className={styles.hash}>{action.owner}</code></dd></div>
+              {/*
+                Labelled "previewed", not "you will receive". The vault's preview is what it expects
+                at this block; the actual figure comes from the Deposit event afterwards and is not
+                replaced by this one.
+              */}
+              <div>
+                <dt>Previewed {action.operation === "deposit" ? "shares" : "assets"}</dt>
+                <dd className="num">{action.previewed} <small className={styles.sub}>base units</small></dd>
+              </div>
             </dl>
           </article>
 
@@ -83,7 +92,12 @@ export function ActionConsole({ action }: ActionConsoleProps) {
               <div><dt>Bound block</dt><dd className="num">{action.simulation.blockNumber}</dd></div>
               <div><dt>Expiry</dt><dd>{new Date(action.simulation.expiresAt).toLocaleString("en-GB", { timeZone: "UTC", timeZoneName: "short" })}</dd></div>
               <div><dt>Gas estimate</dt><dd className="num">{action.simulation.gasEstimate ?? "Unavailable"}</dd></div>
-              <div><dt>Calldata effect</dt><dd>Exact approval then direct deposit</dd></div>
+              <div>
+                <dt>Calldata effect</dt>
+                {/* Read off the calls rather than asserted: a deposit is one call when the
+                    allowance already covers the amount. */}
+                <dd>{action.transactions.map((transaction) => transaction.kind).join(" then ")}</dd>
+              </div>
             </dl>
             <div className={styles.calldata}>
               <p className="monoLabel">
@@ -98,7 +112,7 @@ export function ActionConsole({ action }: ActionConsoleProps) {
               {action.transactions.map((transaction, index) => (
                 <div className={styles.call} key={transaction.data}>
                   <p className="monoLabel">
-                    {index + 1}. to {transaction.to}
+                    {index + 1}. {transaction.kind} · to {transaction.to}
                   </p>
                   <code>{transaction.data}</code>
                 </div>
