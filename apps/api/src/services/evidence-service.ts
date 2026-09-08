@@ -1,4 +1,13 @@
-import { blockTimestamp, createChainClient, type ChainClient } from "@tr4ce/chain";
+import {
+  blockTimestamp,
+  createChainClient,
+  prepareDeposit as prepareDepositCalls,
+  prepareRedeem as prepareRedeemCalls,
+  simulateCall,
+  type ActionReceipt,
+  type ChainClient,
+} from "@tr4ce/chain";
+import { TransactionReceiptNotFoundError } from "viem";
 import {
   insertReport,
   insertRuleResults,
@@ -361,3 +370,94 @@ function thresholdsOf(policy: PolicyV1): Record<PolicyRuleKey, unknown> {
 }
 
 export type { EvidenceReportDraft };
+
+/**
+ * The action half of the chain, backed by a real viem client.
+ *
+ * Lives beside `chainTimeFrom` for the same reason: the app takes narrow interfaces so tests can
+ * answer with fixtures, and the adapters that satisfy them with a real provider belong in one
+ * place rather than scattered across route files.
+ */
+export function actionChainFrom(client: ChainClient) {
+  return {
+    async prepareDeposit(input: {
+      vault: string;
+      asset: string;
+      owner: string;
+      receiver: string;
+      assets: bigint;
+    }) {
+      const result = await prepareDepositCalls(client, {
+        vault: input.vault as `0x${string}`,
+        asset: input.asset as `0x${string}`,
+        owner: input.owner as `0x${string}`,
+        receiver: input.receiver as `0x${string}`,
+        assets: input.assets,
+      });
+
+      return result.ok
+        ? { ok: true as const, calls: result.value.calls, previewed: result.value.previewedShares }
+        : { ok: false as const, code: result.failure.code };
+    },
+
+    async prepareRedeem(input: {
+      vault: string;
+      owner: string;
+      receiver: string;
+      shares: bigint;
+    }) {
+      const result = await prepareRedeemCalls(client, {
+        vault: input.vault as `0x${string}`,
+        owner: input.owner as `0x${string}`,
+        receiver: input.receiver as `0x${string}`,
+        shares: input.shares,
+      });
+
+      return result.ok
+        ? { ok: true as const, calls: result.value.calls, previewed: result.value.previewedAssets }
+        : { ok: false as const, code: result.failure.code };
+    },
+
+    async currentBlock() {
+      const block = await client.getBlock();
+
+      return { number: block.number, hash: block.hash, timestamp: Number(block.timestamp) };
+    },
+
+    simulate(input: Parameters<typeof simulateCall>[1]) {
+      return simulateCall(client, input);
+    },
+
+    /**
+     * Look up a receipt for a hash the caller reported.
+     *
+     * A read, and the only kind of transaction lookup this service does. Null when the node has no
+     * receipt yet: a hash is routinely reported before it is mined, and treating "not yet" as an
+     * error would turn a normal moment into a failure. TR4CE does not retry on its own — the caller
+     * reports the same hash again when they want another look.
+     */
+    async receipt(transactionHash: string): Promise<ActionReceipt | null> {
+      try {
+        const receipt = await client.getTransactionReceipt({
+          hash: transactionHash as `0x${string}`,
+        });
+
+        return {
+          status: receipt.status,
+          blockNumber: receipt.blockNumber,
+          blockHash: receipt.blockHash,
+          transactionHash: receipt.transactionHash,
+          gasUsed: receipt.gasUsed,
+          effectiveGasPrice: receipt.effectiveGasPrice ?? null,
+          logs: receipt.logs,
+        };
+      } catch (error) {
+        if (error instanceof TransactionReceiptNotFoundError) {
+          return null;
+        }
+
+        throw error;
+      }
+    },
+  };
+}

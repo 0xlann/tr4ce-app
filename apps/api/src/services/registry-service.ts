@@ -25,6 +25,9 @@ export interface VaultRegistryEntry {
   assetCanonicalKey: string | null;
   deploymentBlock: string | null;
   probes: readonly CapabilityProbe[];
+  /** The open capability profile, which a simulation binds to (SMART-CONTRACT.md section 6). */
+  adapterKey: string;
+  adapterVersion: string;
   /** Highest block the promotion worker has attested to. Null before the first promotion. */
   attestedBlock: string | null;
   /** Nominal block time, used only to estimate where a window opens. */
@@ -73,6 +76,8 @@ export async function requireVault(
     assetCanonicalKey: detail.assetCanonicalKey,
     deploymentBlock: detail.deploymentBlock,
     probes: parseProbes(detail.capabilities),
+    adapterKey: detail.adapterKey ?? "unresolved",
+    adapterVersion: detail.adapterVersion ?? "unresolved",
     attestedBlock: cursor === null ? null : String(cursor.blockNumber),
     blockSeconds: options.blockSeconds,
   };

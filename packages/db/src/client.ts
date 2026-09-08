@@ -2,6 +2,7 @@ import type { ExtractTablesWithRelations } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase, type PostgresJsTransaction } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
+import * as actionsSchema from "./schema/actions.js";
 import * as cursorsSchema from "./schema/cursors.js";
 import * as observationsSchema from "./schema/observations.js";
 import * as policiesSchema from "./schema/policies.js";
@@ -14,6 +15,7 @@ export const schema = {
   ...observationsSchema,
   ...policiesSchema,
   ...reportsSchema,
+  ...actionsSchema,
   ...cursorsSchema,
   ...rawSchema,
 };

@@ -176,12 +176,28 @@ const preparedAction = preparedActionV1Schema.parse({
   owner: OWNER,
   receiver: OWNER,
   amount: "10000000000",
-  unsignedTransaction: {
-    chainId: 8453,
-    to: vaultMeta[0].address,
-    data: "0x6e553f6500000000000000000000000000000000000000000000000000000002540be40000000000000000000000001111111111111111111111111111111111111111",
-    value: "0",
-  },
+  // Both calls, in signing order. The UI already said "exact approval then direct deposit"; until
+  // the contract became an array it could only show the second one.
+  transactions: [
+    {
+      chainId: 8453,
+      to: BASE_USDC,
+      // approve(vault, 10000000000) — the exact amount, never unlimited (PRD TR-F-034).
+      data: "0x095ea7b3000000000000000000000000ee8f4ec5672f09119b96ab6fb59c27e1b7e44b6100000000000000000000000000000000000000000000000000000002540be400",
+      value: "0",
+      kind: "approve",
+    },
+    {
+      chainId: 8453,
+      to: vaultMeta[0].address,
+      // deposit(10000000000, owner)
+      data: "0x6e553f6500000000000000000000000000000000000000000000000000000002540be4000000000000000000000000001111111111111111111111111111111111111111",
+      value: "0",
+      kind: "deposit",
+    },
+  ],
+  // Shares previewDeposit expects for this amount. A preview, never a promise.
+  previewed: "9784120000",
   simulation: {
     status: "SUCCEEDED",
     blockNumber: "50879900",

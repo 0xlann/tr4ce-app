@@ -29,6 +29,10 @@ describe("the committed OpenAPI document", () => {
     // A route added without a document entry would ship undocumented and this check would not
     // notice, so the four paths are named rather than counted.
     expect(Object.keys(committed["paths"] as object).sort()).toEqual([
+      "/v1/actions/prepare",
+      "/v1/actions/{id}",
+      "/v1/actions/{id}/simulate",
+      "/v1/actions/{id}/submitted",
       "/v1/policies/evaluate",
       "/v1/reports",
       "/v1/reports/{id}",

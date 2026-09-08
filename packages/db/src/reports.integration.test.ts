@@ -131,7 +131,8 @@ describe.skipIf(url === undefined)("report and policy persistence", () => {
 
   beforeEach(async () => {
     await db.execute(
-      sql`TRUNCATE rule_result, report_observation, evidence_report, rpc_observation,
+      sql`TRUNCATE transaction_receipt, simulation, prepared_action,
+                   rule_result, report_observation, evidence_report, rpc_observation,
                    policy_rule, policy_version, policy, wallet, vault_snapshot`,
     );
   });

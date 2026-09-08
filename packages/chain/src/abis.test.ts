@@ -1,10 +1,12 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { erc4626Abi } from "./abis.js";
+import { erc20Abi, erc4626Abi } from "./abis.js";
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Drift between the two ERC-4626 ABIs in this repo.
@@ -85,11 +87,65 @@ describe("read surface", () => {
     }
   });
 
-  it("declares every entry as a view function", () => {
-    // Nothing in this package may change state. The action layer builds its own calldata under
-    // explicit wallet approval; a mutable entry here would be a path around that.
-    for (const entry of erc4626Abi) {
-      expect(entry.stateMutability).toBe("view");
-    }
+  it("declares exactly two state-changing functions, and names them", () => {
+    /*
+     * This assertion used to read "every entry is a view function". Task 7 made that false for a
+     * good reason — `deposit` and `redeem` calldata has to be built somewhere — but the guarantee
+     * behind it has not changed, so the list is pinned rather than the check dropped.
+     *
+     * A third mutable entry appearing here would mean TR4CE learned to encode an operation nobody
+     * reviewed. That is what this now catches.
+     */
+    const mutable = erc4626Abi
+      .filter((entry) => entry.type === "function" && entry.stateMutability !== "view")
+      .map((entry) => entry.name);
+
+    expect(mutable.sort()).toEqual(["deposit", "redeem"]);
   });
+
+  it("declares approve as the only state-changing ERC-20 entry", () => {
+    const mutable = erc20Abi
+      .filter((entry) => entry.stateMutability !== "view")
+      .map((entry) => entry.name);
+
+    expect(mutable).toEqual(["approve"]);
+  });
+});
+
+describe("the package cannot submit a transaction", () => {
+  /*
+   * Task 7's acceptance clause: "There is no service method that signs or submits."
+   *
+   * Encoding calldata for `deposit` is not the same as being able to send it, and the difference
+   * is worth checking rather than asserting in a comment. viem separates the two — a `PublicClient`
+   * has no `sendTransaction` and no account — so the property holds as long as nothing here reaches
+   * for the other half of the library.
+   *
+   * Read from source rather than from types: a `WalletClient` created at runtime would type-check
+   * perfectly well.
+   */
+  const sources = readdirSync(here)
+    .filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"))
+    .map((name) => [name, readFileSync(join(here, name), "utf8")] as const);
+
+  const forbidden = [
+    "createWalletClient",
+    "walletClient",
+    "sendTransaction",
+    "sendRawTransaction",
+    "writeContract",
+    "privateKeyToAccount",
+    "signTransaction",
+  ];
+
+  for (const [name, source] of sources) {
+    it(`${name} reaches for no signing or submitting API`, () => {
+      // Comments stripped: the prose in these files necessarily names the very things it forbids.
+      const code = source.replaceAll(/\/\*[\s\S]*?\*\//g, "").replaceAll(/\/\/[^\n]*/g, "");
+
+      for (const api of forbidden) {
+        expect(code).not.toContain(api);
+      }
+    });
+  }
 });

@@ -3,6 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  actionKindSchema,
+  actionStatusSchema,
   callStatusSchema,
   flowKindSchema,
   invalidationSubjectKindSchema,
@@ -13,6 +15,7 @@ import {
   policySourceSchema,
   reasonCodeSchema,
   reportStatusSchema,
+  revertClassSchema,
   ruleResultStatusSchema,
   transferKindSchema,
   vaultStatusSchema,
@@ -44,6 +47,7 @@ const read = (file: string) => readFileSync(join(migrationsDirectory, file), "ut
  */
 const registry = read("0001_registry_observations.sql");
 const reports = read("0002_reports_and_policies.sql");
+const actions = read("0004_prepared_actions.sql");
 
 /** Pull the quoted values out of `CONSTRAINT <name> CHECK (… IN ('a', 'b', …))`. */
 function checkConstraintValues(migration: string, constraintName: string): string[] {
@@ -94,6 +98,9 @@ describe("enum CHECK constraints match the shared schema", () => {
     [reports, "report_observation_type_check", observationTypeSchema.options],
     [reports, "report_observation_purpose_check", observationPurposeSchema.options],
     [reports, "rule_result_status_check", ruleResultStatusSchema.options],
+    [actions, "prepared_action_kind_check", actionKindSchema.options],
+    [actions, "prepared_action_status_check", actionStatusSchema.options],
+    [actions, "simulation_revert_class_check", revertClassSchema.options],
   ];
 
   for (const [migration, constraint, options] of cases) {
@@ -182,6 +189,90 @@ describe("integrity rules a schema differ cannot infer", () => {
     // about this database rather than an assumption about every database.
     expect(reports).toContain("EXISTS (SELECT 1 FROM evidence_report)");
     expect(reports).toContain("holds rows; 0002 will not drop it");
+  });
+
+  it("stores no signature anywhere in the action tables", () => {
+    /*
+     * ERD section 7 in four words: "No signature is stored." Checked against the DDL because a
+     * column is the only way one could be, and the wording of that sentence is easy to honour in a
+     * review and forget in a migration.
+     */
+    const ddl = actions.replaceAll(/--[^\n]*/g, "");
+
+    for (const forbidden of ["signature", "signed_", "private_key", "mnemonic", "raw_transaction"]) {
+      expect(ddl).not.toMatch(new RegExp(forbidden, "i"));
+    }
+  });
+
+  it("ties an action's terminal reason to its terminal status", () => {
+    // "invalidated" with no reason tells a user nothing about whether resimulating would help.
+    expect(actions).toContain(
+      "CHECK ((status IN ('expired', 'invalidated')) = (invalidated_reason IS NOT NULL))",
+    );
+  });
+
+  it("ties a successful simulation to a gas figure and a failed one to a revert class", () => {
+    // The same "missing evidence stays explicit" rule as vault_snapshot.call_errors: there is no
+    // gas figure for a transaction that did not happen, and a zero would read as a free one.
+    expect(actions).toContain(
+      "CHECK (success = (gas_estimate IS NOT NULL AND revert_class = 'none'))",
+    );
+  });
+
+  it("moves every receipt confirmation column together", () => {
+    // A hash is known long before a receipt is. Half-observed confirmation must not read as
+    // confirmed.
+    expect(actions).toContain("(confirmed_block_number IS NULL) = (confirmed_block_hash IS NULL)");
+    expect(actions).toContain("(confirmed_block_number IS NULL) = (status IS NULL)");
+  });
+
+  it("will not let an action be submitted while one of its calls has no hash", () => {
+    /*
+     * The constraint the whole two-call flow rests on. Without it the approval of an
+     * approve-plus-deposit pair could close the action and strand the deposit — which is exactly
+     * what happened before `sent_count` existed.
+     */
+    expect(actions).toContain(
+      "status NOT IN ('submitted', 'confirmed', 'reverted')\n            OR sent_count = jsonb_array_length(transactions_json)",
+    );
+    expect(actions).toContain(
+      "CHECK (sent_count >= 0 AND sent_count <= jsonb_array_length(transactions_json))",
+    );
+  });
+
+  it("keeps an action's report about the same vault the action targets", () => {
+    // A plain REFERENCES evidence_report (id) would let an action on vault A cite a report about
+    // vault B — the bug report_observation's own composite keys exist to prevent (ERD section 11).
+    const ddl = actions.replaceAll(/--[^\n]*/g, "");
+
+    expect(ddl).toContain(
+      "FOREIGN KEY (report_id, vault_id) REFERENCES evidence_report (id, vault_id)",
+    );
+    expect(ddl).not.toMatch(/report_id\s+TEXT\s+REFERENCES/);
+  });
+
+  it("scopes action idempotency to the ones still awaiting a signature", () => {
+    /*
+     * A plain UNIQUE on calldata_hash would make a second identical deposit unpreparable forever:
+     * TR4CE's approval is exact, so a completed deposit leaves the allowance back at zero and
+     * repeating it is a legitimate new intent.
+     */
+    expect(actions).toContain("CREATE UNIQUE INDEX IF NOT EXISTS prepared_action_live_binding_key");
+    expect(actions).toContain("WHERE status IN ('prepared', 'simulated')");
+  });
+
+  it("keys a receipt by call, not by action", () => {
+    // Deviation from ERD section 7, and a deliberate one: an approve-plus-deposit pair produces two
+    // hashes, and one row per action would leave the second nowhere to go.
+    expect(actions).toContain("PRIMARY KEY (prepared_action_id, call_index)");
+  });
+
+  it("secures the action tables, which are the most sensitive in the schema", () => {
+    // prepared_action ties a wallet address to what it was about to do. Migration 0003 ran before
+    // these tables existed, so 0004 has to enable RLS itself.
+    for (const table of ["prepared_action", "simulation", "transaction_receipt"]) {
+      expect(actions).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+    }
   });
 
   it("stores a provider key on an RPC observation and never a credential", () => {

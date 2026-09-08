@@ -300,15 +300,91 @@ Acceptance: Repeating a request over identical inputs returns the same report; H
 
 **Produces:** Unsigned action arrays, bound simulation, status tracking.
 
-- [ ] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
-- [ ] Build calls directly to verified asset/vault; refuse unlimited allowance.
-- [ ] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
-- [ ] Persist no signature; accept transaction hash only after wallet submission.
-- [ ] Decode receipt events and show preview-versus-actual values.
-- [ ] Run fork and API tests.
-- [ ] Commit as `feat(tr4ce): prepare simulated vault actions`.
+- [x] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
+- [x] Build calls directly to verified asset/vault; refuse unlimited allowance.
+- [x] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
+- [x] Persist no signature; accept transaction hash only after wallet submission.
+- [x] Decode receipt events and show preview-versus-actual values.
+- [x] Run fork and API tests.
+- [x] Commit as `feat(tr4ce): prepare simulated vault actions`.
 
-Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation.
+> **Two findings the Anvil fork produced**, both now behaviour rather than surprises.
+>
+> The second call of an approve-plus-deposit pair cannot be simulated before the first lands — it
+> reverts for want of the allowance. `nextCallToSimulate` states that, and the API simulates only
+> the next unsent call: attaching a success status and a gas figure to the deposit would have
+> claimed something nobody had established. Once the approval is mined the block has moved, so the
+> deposit needs its own simulation anyway, which is the ordinary binding rule rather than a special
+> case.
+>
+> On the Morpho vault `maxRedeem` sits fractionally below the owner's own share balance — about one
+> part in a hundred million, from the rounding that protects the vault. A "redeem everything" button
+> wired to `balanceOf` therefore builds a transaction the chain refuses. Both arms are tested.
+>
+> **The no-signing guarantee is checked, not asserted.** Two tests read every non-test source file
+> in `packages/chain` and `apps/api` and fail if any names viem's wallet half — a wallet client
+> constructed at runtime type-checks perfectly well, so types alone would not have carried the
+> claim. Both were verified by introducing a submission path and watching them fail.
+>
+> **Deviation from the file list:** the calldata builders live in `packages/chain/src/prepare.ts`
+> rather than split across `prepare-deposit.ts` and `prepare-redeem.ts`. They share every
+> precondition helper and the failure type; two files would have meant one importing the other for
+> no gain in navigability.
+>
+> **`preparedActionV1Schema` changed shape.** It held a single `unsignedTransaction`, which cannot
+> express a deposit that needs an approval first. Now `transactions`, an array — matching what this
+> task, the ERD, and the action console's own copy already assumed. Each entry carries its `kind`,
+> and the schema also carries `previewed`.
+>
+> ---
+>
+> **The first cut of this task shipped a flow that could not be completed.** Found by running the
+> approve-then-deposit sequence through the routes rather than through the chain: reporting the
+> approval's hash moved the action to `submitted`, and the deposit then had nowhere to go — it could
+> not be simulated, its hash could not be reported, and `transaction_receipt` had room for one row
+> per action. The fork test passed throughout, because it drives the chain directly and never asks
+> the API to represent the pair.
+>
+> The cause was one decision: the block was part of the action's identity. `calldata_hash` and the
+> `act_` id were both derived from the *simulation* binding, which is pinned to a block. ERD section
+> 7 puts `calldata_hash` on `prepared_action` and `block_number` on `simulation`, and this is why.
+>
+> What changed:
+>
+> - `actionDigest` covers chain, account, every call in signing order, and capability version —
+>   never the block. `bindingDigest` still covers one simulation, block included.
+> - **The action id is generated, not derived.** A report is a pure function of its observations, so
+>   naming it after them is right; an action is an intent to spend, and repeating one is legitimate.
+>   TR4CE's approval is exact, so a completed deposit leaves the allowance at zero and an identical
+>   second deposit is a second real action — under a content-derived id it would have been
+>   unpreparable forever. Idempotency moved to a partial unique index on `calldata_hash` covering
+>   only actions still awaiting signature, which is where it means something.
+> - `sent_count`, `previewed_amount` and `capability_version` on `prepared_action`; `call_index` on
+>   `simulation`; `call_index` and `actual_amount` on `transaction_receipt`. A CHECK refuses
+>   `submitted` while any call still lacks a hash.
+> - `report_id` became a composite foreign key to `(id, vault_id)`. It was a plain reference, so an
+>   action on one vault could cite a report about another — the bug `report_observation`'s own
+>   composite keys exist to prevent.
+> - **`POST /v1/actions/{id}/simulate`.** The acceptance clause says an action is non-signable
+>   *"until resimulation"*, and there was no resimulation path at all. It is also the only way the
+>   deposit of a pair is ever simulated.
+> - `GET /v1/actions/{id}` refuses to call an action signable when the newest simulation is for a
+>   different call than the one awaiting signature. Without that, a wallet could sign a deposit on
+>   an approval's gas estimate (TR-F-032). Verified by removing the check and watching the flow test
+>   fail.
+>
+> **Second deviation from ERD section 7:** `transaction_receipt` is keyed `(prepared_action_id,
+> call_index)`, where the ERD writes `prepared_action_id` UNIQUE. One receipt per action cannot
+> represent the approve-plus-deposit pair SMART-CONTRACT.md section 4 requires — the approval's hash
+> would overwrite the deposit's or have nowhere to go. Recorded here rather than left as an
+> undocumented difference, on the same terms as the content-derived report id in Task 6.
+>
+> **`invalidateAction` has no caller in this task.** It is the write side of the reorg path, which
+> `reorg_invalidation.subject_id` became TEXT for in Task 6. It is kept and tested rather than given
+> an invented caller: an expired budget is *not* a reason to write `expired`, because resimulating
+> revives the action and a terminal status would be a lie about that.
+
+Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation. Both verified: the source-level checks above cover the first, and `checkSignable` is exercised by mutating each of the eight bound fields on its own — an aggregate check would pass while seven went unbound.
 
 ## Task 8: Expose MCP tools and public agent skill
 

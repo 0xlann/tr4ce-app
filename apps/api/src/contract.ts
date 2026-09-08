@@ -1,11 +1,17 @@
 import {
+  actionOutcomeSchema,
+  actionStatusSchema,
   addressSchema,
   apiErrorSchema,
+  baseUnitStringSchema,
+  blockHashSchema,
   blockNumberStringSchema,
   chainIdSchema,
   evidenceReportV1Schema,
   policyEvaluationSchema,
   policyV1Schema,
+  preparedActionV1Schema,
+  revertClassSchema,
   vaultStatusSchema,
 } from "@tr4ce/domain";
 import { z } from "zod";
@@ -91,3 +97,88 @@ export const evaluatePolicyResponseSchema = z.strictObject({
 });
 
 export { apiErrorSchema };
+
+export const prepareActionRequestSchema = z.strictObject({
+  chainId: chainIdSchema,
+  vaultAddress: addressSchema,
+  operation: z.enum(["deposit", "redeem"]),
+  owner: addressSchema,
+  receiver: addressSchema,
+  /**
+   * Base units — assets for a deposit, shares for a redemption. A decimal string, never a JSON
+   * number: a uint256 amount does not survive a double.
+   */
+  amount: baseUnitStringSchema,
+  /** The report that motivated this, when one did. Evidence, never a precondition. */
+  reportId: z.string().regex(/^trc_[0-9a-f]{32}$/).nullish(),
+});
+export type PrepareActionRequest = z.infer<typeof prepareActionRequestSchema>;
+
+export const preparedActionResponseSchema = z.strictObject({
+  schemaVersion: z.literal("1.0.0"),
+  action: preparedActionV1Schema,
+});
+
+/** One recorded simulation attempt, newest first in the response. */
+export const simulationAttemptSchema = z.strictObject({
+  callIndex: z.number().int().nonnegative(),
+  success: z.boolean(),
+  blockNumber: blockNumberStringSchema,
+  revertClass: revertClassSchema,
+  gasEstimate: baseUnitStringSchema.nullable(),
+  at: z.string().datetime(),
+});
+
+/**
+ * Whether an action may still be signed, judged now rather than when it was stored.
+ *
+ * `signable` is the field a caller acts on. `status` says where the action stands, and the two are
+ * separate because a submitted action is not signable for a completely different reason than an
+ * expired one.
+ *
+ * `nextCallIndex` is what a wallet UI needs to know which transaction to put in front of the user.
+ * A deposit whose allowance falls short is two calls, and after the first is reported the action is
+ * signable again — for the second call, against its own simulation.
+ */
+export const actionStatusResponseSchema = z.strictObject({
+  schemaVersion: z.literal("1.0.0"),
+  actionId: z.string().regex(/^act_[0-9a-f]{32}$/),
+  status: actionStatusSchema,
+  signable: z.boolean(),
+  /** Null when signable. Otherwise which of the five ways it stopped being so. */
+  reason: z.string().nullable(),
+  expiresAt: z.string().datetime(),
+  /** How many calls this action carries, and how many have had a hash reported. */
+  callCount: z.number().int().positive(),
+  sentCount: z.number().int().nonnegative(),
+  /** The call awaiting signature, or null once every call has been reported. */
+  nextCallIndex: z.number().int().nonnegative().nullable(),
+  /**
+   * The operation's own result, once its receipt has been observed.
+   *
+   * Null while the deposit or redemption has not been reported, or has been reported but not yet
+   * mined. Never a placeholder built from the preview.
+   */
+  outcome: actionOutcomeSchema.nullable(),
+  /** Every simulation attempt, newest first — including the ones the chain refused. */
+  attempts: z.array(simulationAttemptSchema),
+});
+export type ActionStatusResponse = z.infer<typeof actionStatusResponseSchema>;
+
+export const reportSubmissionRequestSchema = z.strictObject({
+  chainId: chainIdSchema,
+  /**
+   * Which call of the action this hash belongs to.
+   *
+   * Required rather than inferred. A two-call deposit produces two hashes, and guessing which one
+   * arrived is exactly how an approval's hash ends up recorded as the deposit's.
+   */
+  callIndex: z.number().int().nonnegative(),
+  /**
+   * The hash the caller's wallet produced.
+   *
+   * TR4CE never submits, so this is the only way a hash arrives — as a report about something that
+   * already happened elsewhere (PRD TR-F-043).
+   */
+  transactionHash: blockHashSchema,
+});

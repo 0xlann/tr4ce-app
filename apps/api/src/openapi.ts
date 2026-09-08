@@ -3,14 +3,20 @@ import {
   evidenceReportV1Schema,
   policyEvaluationSchema,
   policyV1Schema,
+  preparedActionV1Schema,
 } from "@tr4ce/domain";
 import { z } from "zod";
 
 import {
+  actionStatusResponseSchema,
   createReportRequestSchema,
   evaluatePolicyRequestSchema,
   evaluatePolicyResponseSchema,
+  prepareActionRequestSchema,
+  preparedActionResponseSchema,
   reportResponseSchema,
+  reportSubmissionRequestSchema,
+  simulationAttemptSchema,
   vaultListResponseSchema,
   vaultSummarySchema,
 } from "./contract.js";
@@ -39,6 +45,12 @@ const registry = {
   EvaluatePolicyResponse: evaluatePolicyResponseSchema,
   PolicyV1: policyV1Schema,
   PolicyEvaluation: policyEvaluationSchema,
+  PrepareActionRequest: prepareActionRequestSchema,
+  PreparedActionResponse: preparedActionResponseSchema,
+  PreparedActionV1: preparedActionV1Schema,
+  ActionStatusResponse: actionStatusResponseSchema,
+  ReportSubmissionRequest: reportSubmissionRequestSchema,
+  SimulationAttempt: simulationAttemptSchema,
 } as const;
 
 const ref = (name: keyof typeof registry) => ({ $ref: `#/components/schemas/${name}` });
@@ -63,7 +75,9 @@ function descriptionFor(code: number): string {
     case 404:
       return "No such vault or report.";
     case 409:
-      return "The observations needed to answer do not exist yet.";
+      return "The observations or chain state needed to answer do not allow it.";
+    case 501:
+      return "This deployment has no chain configured for actions.";
     default:
       return "The request could not be completed.";
   }
@@ -145,6 +159,87 @@ export function buildOpenApiDocument(): unknown {
               content: json("EvaluatePolicyResponse"),
             },
             ...errorResponses(400, 404, 409),
+          },
+        },
+      },
+      "/v1/actions/prepare": {
+        post: {
+          operationId: "prepareAction",
+          summary: "Build the unsigned calls for a deposit or redemption, and simulate the first.",
+          description:
+            "Returns unsigned transactions only. TR4CE never signs and never submits: the wallet owner approves each call, and only the first unsent call is simulated because the second reverts until the first has landed.",
+          requestBody: { required: true, content: json("PrepareActionRequest") },
+          responses: {
+            "200": {
+              description: "The prepared action, with the first call simulated.",
+              content: json("PreparedActionResponse"),
+            },
+            ...errorResponses(400, 404, 409, 501),
+          },
+        },
+      },
+      "/v1/actions/{id}": {
+        get: {
+          operationId: "getActionStatus",
+          summary: "Whether a prepared action may still be signed, judged now.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "string", pattern: "^act_[0-9a-f]{32}$" },
+            },
+          ],
+          responses: {
+            "200": { description: "The action's standing.", content: json("ActionStatusResponse") },
+            ...errorResponses(404, 501),
+          },
+        },
+      },
+      "/v1/actions/{id}/simulate": {
+        post: {
+          operationId: "simulateNextActionCall",
+          summary: "Simulate the next unsent call against the current block.",
+          description:
+            "Resimulation. An action stops being signable when a bound field moves, and this is what makes it signable again. It is also the only way the deposit of an approve-plus-deposit pair is ever simulated: before the approval lands, that call reverts.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "string", pattern: "^act_[0-9a-f]{32}$" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "The action's standing after the attempt.",
+              content: json("ActionStatusResponse"),
+            },
+            ...errorResponses(404, 409, 501),
+          },
+        },
+      },
+      "/v1/actions/{id}/submitted": {
+        post: {
+          operationId: "reportActionSubmission",
+          summary: "Report the transaction hash a wallet produced.",
+          description:
+            "The only route by which a transaction hash enters TR4CE, and it arrives as a report about something that already happened in the caller's wallet.",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: { type: "string", pattern: "^act_[0-9a-f]{32}$" },
+            },
+          ],
+          requestBody: { required: true, content: json("ReportSubmissionRequest") },
+          responses: {
+            "200": {
+              description: "The action's standing after the report.",
+              content: json("ActionStatusResponse"),
+            },
+            ...errorResponses(400, 404, 409, 501),
           },
         },
       },
