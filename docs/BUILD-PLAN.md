@@ -395,14 +395,68 @@ Acceptance: There is no service method that signs or submits; changing any bound
 - Create: `evals/{prompts.jsonl,rubric.json}`
 - Test: `apps/mcp/src/tools.protocol.test.ts`
 
-- [ ] Register exactly six tools from the integrations specification.
-- [ ] Reuse application services and Zod-generated schemas; do not duplicate calculations.
-- [ ] Assert prepare tools return unsigned data and no submit method exists.
-- [ ] Document units, limitations, freshness, errors, and wallet approval in `SKILL.md`.
-- [ ] Test HTTP report JSON and MCP report JSON for canonical equality.
-- [ ] Commit as `feat(tr4ce): add typed agent evidence tools`.
+- [x] Register exactly six tools from the integrations specification.
+- [x] Reuse application services and Zod-generated schemas; do not duplicate calculations.
+- [x] Assert prepare tools return unsigned data and no submit method exists.
+- [x] Document units, limitations, freshness, errors, and wallet approval in `SKILL.md`.
+- [x] Test HTTP report JSON and MCP report JSON for canonical equality.
+- [x] Commit as `feat(tr4ce): add typed agent evidence tools`.
 
 Acceptance: An MCP client can discover, evaluate, and prepare without unrestricted GraphQL or transaction submission.
+
+> **The tools dispatch into the Hono app in process, rather than calling services one by one.**
+> Two things forced it, and both are worth stating because the checklist says "do not duplicate
+> calculations" without saying where the duplication would come from.
+>
+> `POST /v1/policies/evaluate` orchestrates `validatePolicy` → `requireVault` → `buildDraft` →
+> `evaluatePolicy` inside its route handler; there is no `policy-service.ts`. And the structured
+> error envelope is applied by `app.onError`. A tool layer calling services directly would have to
+> reimplement both. Going through the routes means there is no second implementation at all, which
+> makes "MCP and UI return the same report schema" (PRD section 13, step 7) structural.
+>
+> **`@tr4ce/api` gained an `exports` map**, so it is now an app that is also a library. The tidier
+> shape — lifting the services *and* the route orchestration into a package of their own — would not
+> change a line of what the tools do, and is noted in `apps/api/src/index.ts` as the thing to do
+> later rather than left implicit.
+>
+> **What "side effect: None" means in INTEGRATIONS section 7.** It cannot mean "writes nothing":
+> `prepare_deposit` persists a prepared action and its simulation, and `get_evidence` persists a
+> report. It means no chain state changes and no funds move. That reading is written into
+> `SKILL.md`, along with its consequence — these tools are never described as read-only, because
+> two of them write.
+>
+> **stdio only.** A streamable-HTTP transport is Task 10's deployment item; adding it here would be
+> configuration that the in-memory protocol tests do not exercise either way. The server refuses to
+> start without `RPC_URL_BASE`: three of the six tools need a chain, and without one the action
+> routes answer 501 — half the advertised surface failing on use rather than at startup.
+>
+> **A control that did not fail, reported rather than quietly dropped.** The plan said to prove the
+> byte-equality test by replacing the response pass-through with
+> `JSON.stringify(await response.json())`. The suite stayed green: for the shapes this contract
+> carries, a round trip produces identical bytes — every large number is already a decimal string
+> and no key is integer-like. The test does catch reshaping and reformatting (both verified by
+> breaking them), and the pass-through is kept because it is byte-identical for *any* payload rather
+> than only for today's. The comment in `respond()` says exactly that instead of claiming a risk
+> that does not exist here.
+>
+> **A product gap the prompt set surfaced, left open deliberately.** `get_evidence` requires a full
+> five-rule policy, because `evidenceReportV1Schema.policy` is a required block of the v1 report
+> contract. So the most natural agent question — "what did this vault do over the last week?" —
+> cannot be answered without the user supplying criteria, and an agent that invents thresholds
+> produces a `status` verdict about numbers nobody asked for.
+>
+> Closing it means making the policy evaluation optional in a published contract: a schema-version
+> bump, a change to what `canonical_input_hash` covers and therefore to report identity, and a change
+> to the OpenAPI document and the web report page. That is Task 6's contract, not Task 8's, and doing
+> it here would silently re-identify every stored report. The storage layer is already ready —
+> migration 0002's `evidence_report_policy_status_check` allows a null `policy_version_id` paired
+> with `status = 'not_evaluated'` — so the work is in the contract, not the database.
+>
+> For now the constraint is stated in `SKILL.md` with the instruction to ask for criteria rather than
+> invent them, and the affected eval prompt states its criteria.
+>
+> `evals/prompts.jsonl` and `evals/rubric.json` are the fixed prompt set and scoring only. Running
+> them is Task 10.
 
 ## Task 9: Build the evidence-first web product
 

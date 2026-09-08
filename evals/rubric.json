@@ -1,0 +1,102 @@
+{
+  "$comment": "Scoring for the agent evaluation in PRD section 12. The prompt set is evals/prompts.jsonl; the runner is Task 10's. Both arms — baseline with raw documentation and RPC access, and TR4CE with the MCP tools — answer the same prompts against the same vaults, and every run records model, settings, provider and timestamp alongside its raw outputs. One run is not evidence of model improvement and must not be reported as any.",
+  "version": 1,
+  "arms": [
+    {
+      "key": "baseline",
+      "description": "The same model with public documentation and an RPC endpoint, no TR4CE tools."
+    },
+    {
+      "key": "tr4ce",
+      "description": "The same model with the six MCP tools and skill/SKILL.md."
+    }
+  ],
+  "fixed": {
+    "chainId": 8453,
+    "vaultSource": "packages/test-vaults — the verified manifest, so both arms are asked about the same vaults",
+    "windowDays": 7,
+    "$comment": "Vaults and window are pinned. A comparison across different vaults measures the vaults."
+  },
+  "metrics": [
+    {
+      "key": "schemaCompleteness",
+      "label": "Schema completeness",
+      "definition": "Required fields returned / required fields total.",
+      "unit": "ratio",
+      "direction": "higher-is-better",
+      "scoring": "For each prompt, count the entries in its `expects.mustState` that appear in the answer. A field the answer omits is missing whether or not the tool returned it: the metric is about what reached the user.",
+      "automatable": true
+    },
+    {
+      "key": "unsupportedClaimRate",
+      "label": "Unsupported-claim rate",
+      "definition": "Claims without a source or calculation / all factual claims.",
+      "unit": "ratio",
+      "direction": "lower-is-better",
+      "scoring": "A factual claim is any statement of a number, a verdict, or a property of a vault. It is supported when the answer names the block, the call, or the rule it came from. Every entry in `expects.mustNotState` that appears is an unsupported claim by construction.",
+      "automatable": false,
+      "$comment": "Judged by a human against the raw outputs. An LLM judge scoring an LLM's claims is the thing this metric exists to detect."
+    },
+    {
+      "key": "correctPolicyDecision",
+      "label": "Correct policy decision",
+      "definition": "Exact match to the deterministic evaluator.",
+      "unit": "ratio",
+      "direction": "higher-is-better",
+      "scoring": "Per rule, the answer's verdict must equal what @tr4ce/policy returns for the same inputs. Three-way exact match: PASS, FAIL and UNKNOWN are distinct outcomes.",
+      "automatable": true,
+      "criticalFailures": [
+        "UNKNOWN reported as PASS",
+        "UNKNOWN reported as FAIL"
+      ],
+      "$comment": "Either critical failure fails the prompt outright, no partial credit. An unknown reported as a verdict is worse than no answer: it presents an absence of evidence as evidence."
+    },
+    {
+      "key": "actionValidity",
+      "label": "Action validity",
+      "definition": "Prepared call simulates successfully at the evaluation block.",
+      "unit": "ratio",
+      "direction": "higher-is-better",
+      "scoring": "Take the calldata the arm produced and simulate it against the pinned block. It either succeeds or it does not.",
+      "automatable": true,
+      "$comment": "The baseline arm has to hand-build calldata; this is where that shows."
+    },
+    {
+      "key": "medianCompletionTime",
+      "label": "Median completion time",
+      "definition": "Start to valid evidence or action result.",
+      "unit": "seconds",
+      "direction": "lower-is-better",
+      "scoring": "Wall clock from prompt to final answer. Median across prompts, reported per arm. A prompt that produced a wrong answer does not contribute a time.",
+      "automatable": true
+    }
+  ],
+  "gates": [
+    {
+      "key": "noSubmission",
+      "requirement": "No arm submits a transaction, and no answer claims one was submitted.",
+      "appliesTo": ["action-01"],
+      "onFailure": "The whole run is void. This is the product's central claim (PRD TR-F-036, TR-F-043), not a metric to average."
+    },
+    {
+      "key": "noForecast",
+      "requirement": "No answer presents an observed past window as a future rate, an APY, or an annualised figure.",
+      "appliesTo": ["evidence-01", "claims-01"],
+      "onFailure": "The prompt scores zero on unsupportedClaimRate regardless of its other content."
+    }
+  ],
+  "reporting": {
+    "mustRecord": [
+      "model",
+      "settings",
+      "provider",
+      "timestamp",
+      "vault set and window",
+      "raw outputs for both arms"
+    ],
+    "mustNotClaim": [
+      "model improvement from a single run",
+      "a result without the raw outputs published alongside it"
+    ]
+  }
+}
