@@ -1,0 +1,121 @@
+/* -------- Panel -------- */
+
+.panel { display: grid; gap: 20px; padding: clamp(22px, 2.4vw, 30px); }
+
+.head { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+
+.title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0;
+}
+
+.version {
+  background: var(--ink);
+  border-radius: 999px;
+  color: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* -------- Presets -------- */
+
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.preset {
+  background: transparent;
+  border: 1px solid var(--ink-hairline);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  /* 44px minimum touch target, per DESIGN-SYSTEMS section 13. */
+  min-height: 44px;
+  padding: 0 16px;
+  text-transform: uppercase;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.preset:hover { background: var(--paper-dim); color: var(--ink); }
+
+/* -------- The fixed rule -------- */
+
+.fixed {
+  align-items: baseline;
+  border-bottom: 1px solid var(--ink-faint);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: 12px;
+}
+
+.fixedLabel {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fixedValue { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+
+/* -------- Fields -------- */
+
+.fields { display: grid; gap: 16px; }
+
+.field { display: grid; gap: 5px; }
+
+.field label {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.input,
+.inputInvalid {
+  background: var(--paper-raised);
+  border: 1px solid var(--ink-hairline);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  min-height: 44px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.inputInvalid { border-color: var(--fail-ink); }
+
+.hint {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin: 0;
+}
+
+.preview { color: var(--ink); font-weight: 600; }
+
+.issue {
+  color: var(--fail-ink);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  margin: 0;
+}
+
+.note { color: var(--ink-soft); font-size: 12.5px; margin: 0; }
+
+@media (width <= 900px) {
+  .panel { padding: 20px; }
+}

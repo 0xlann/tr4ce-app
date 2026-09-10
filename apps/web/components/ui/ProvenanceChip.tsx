@@ -31,7 +31,19 @@ export function ProvenanceChip({ entries }: ProvenanceChipProps) {
 
   return (
     <>
-      <button ref={triggerRef} className={styles.chip} onClick={() => dialogRef.current?.showModal()} type="button">
+      {/*
+        The visible text names the block; the accessible name has to name the action as well. A
+        screen-reader user hearing "Base, block 50879897, button" learns where they are and not what
+        pressing it does, and DESIGN-SYSTEMS section 13 asks for the full address to stay available
+        to assistive technology when it is visually shortened.
+      */}
+      <button
+        ref={triggerRef}
+        aria-label={`Show provenance sources, ${entries.length} entries, from block ${first.blockNumber}`}
+        className={styles.chip}
+        onClick={() => dialogRef.current?.showModal()}
+        type="button"
+      >
         <LinkGlyph />
         {first.chainId === 8453 ? "Base" : `Chain ${first.chainId}`} · block {first.blockNumber}
       </button>

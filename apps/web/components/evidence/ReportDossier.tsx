@@ -21,7 +21,7 @@ const ruleLabels = {
 
 export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
   const failingRule = report.policy.rules.find((rule) => rule.status !== "PASS");
-  const reason = failingRule?.reasonCodes[0] ?? "All five illustrative policy rules passed.";
+  const reason = failingRule?.reasonCodes[0] ?? "All five policy rules passed against the observations at this block.";
 
   return (
     <article className={styles.report}>
@@ -109,7 +109,10 @@ export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
             <div><dt>Assets at start</dt><dd className="num">{report.observations.shareValue.assetsAtStart}</dd></div>
             <div><dt>Assets now</dt><dd className="num">{report.observations.shareValue.assetsNow}</dd></div>
             <div><dt>Net flow assets</dt><dd className="num">{report.observations.netFlowAssets}</dd></div>
-            <div><dt>Rounding</dt><dd>Floor, illustrative display</dd></div>
+            {/* Stated, not read: the engine floors every basis-point conversion (TR-F-013) but the
+                v1 report does not carry its own `rounding` field, so this names what the calculation
+                version did rather than echoing the report. */}
+            <div><dt>Rounding</dt><dd>Floor, toward negative infinity</dd></div>
           </dl>
         </div>
       </section>
@@ -127,7 +130,7 @@ export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
       </section>
 
       <details className={styles.json} id="json">
-        <summary>View illustrative report JSON</summary>
+        <summary>View the stored report JSON</summary>
         <pre>{JSON.stringify(report, null, 2)}</pre>
       </details>
     </article>
