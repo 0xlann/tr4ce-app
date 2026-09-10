@@ -254,3 +254,34 @@
   .scrollHint { display: block; position: sticky; left: 0; }
   .table { min-width: 760px; }
 }
+
+/* Inspect became a button when it started recording a report rather than following a link. Buttons
+   inherit neither font nor background, so both are restated. */
+.inspect {
+  background: var(--paper-raised);
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 44px;
+}
+
+.inspect:disabled { cursor: progress; opacity: 0.55; }
+
+/* A failure that blocks the action the user just took. Announced assertively in the markup; here it
+   only needs to be impossible to miss. */
+.failure {
+  background: var(--fail-wash);
+  border: 1px solid var(--fail-ink);
+  border-radius: 10px;
+  color: var(--fail-ink);
+  font-size: 13.5px;
+  margin: 0 0 18px;
+  padding: 12px 16px;
+}
+
+.tableNote {
+  border-top: 1px solid var(--ink-faint);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  margin: 0;
+  padding: 14px clamp(18px, 2vw, 26px);
+}

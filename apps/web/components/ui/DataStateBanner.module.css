@@ -25,3 +25,14 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
+
+.loading .dot { animation: pulse 1.6s var(--ease-out) infinite; background: var(--ink-mute); }
+
+/* What specifically was missing, when the API said. Wraps rather than truncates: a limitation that
+   only fits on a wide screen is a limitation the mobile reader never sees. */
+.detail {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}

@@ -467,17 +467,75 @@ Acceptance: An MCP client can discover, evaluate, and prepare without unrestrict
 - Create: `apps/web/styles/tokens.css`
 - Test: `apps/web/e2e/tr4ce.spec.ts`
 
-- [ ] Implement design tokens from `DESIGN-SYSTEMS.md` and verify AA contrast.
-- [ ] Build disconnected search and typed policy builder first.
-- [ ] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
-- [ ] Build report calculation/provenance disclosure and JSON view.
+- [x] Implement design tokens from `DESIGN-SYSTEMS.md` and verify AA contrast.
+- [x] Build disconnected search and typed policy builder first.
+- [x] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
+- [x] Build report calculation/provenance disclosure and JSON view.
 - [ ] Add wagmi action flow with chain/account invalidation and exact wallet preview.
-- [ ] Add loading, stale, partial, reorged, simulation-failed, submitted, confirmed, and reverted states.
-- [ ] Write Playwright path: policy → mixed results → report → simulation → mocked wallet handoff; use fork test for real EVM behavior.
-- [ ] Test keyboard-only flow and mobile evidence parity.
-- [ ] Commit as `feat(tr4ce): ship evidence-first interface`.
+- [x] Add loading, stale, partial, reorged, simulation-failed, submitted, confirmed, and reverted states.
+- [x] Write Playwright path: policy → mixed results → report → simulation → mocked wallet handoff; use fork test for real EVM behavior.
+- [x] Test keyboard-only flow and mobile evidence parity.
+- [x] Commit as `feat(tr4ce): ship evidence-first interface`.
 
 Acceptance: A user can explain a failed/unknown rule and inspect exact provenance without a wallet; no APY headline outranks policy status.
+
+> **The visual product already existed; the data did not.** Every route and component was built
+> against `src/demo/fixtures.ts`, deliberately — the Task 9 design spec says so and names the seam:
+> *"When Task 6 exists, a single fixture-provider module is replaced with HTTP reads."* This task is
+> that replacement. It turned out to be three places rather than one: both dynamic routes enumerated
+> fixture ids through `generateStaticParams`, and the comparison surface computed its results
+> synchronously in the browser. `generateStaticParams` is gone from both — a `trc_` id is a digest of
+> observations and an `act_` id is generated, so neither set is knowable at build time.
+>
+> **The browser never talks to the evidence API.** Every call goes through a route handler under
+> `app/api`. Not for CORS — the API mounts none — but because it has no authentication at all:
+> reaching it from the browser means reaching it from anyone, and every visitor could then write
+> reports into the database. `TR4CE_API_URL` stays server-side.
+>
+> **The policy builder posts to the endpoint that was built for it.** `POST /v1/policies/evaluate`
+> takes `policy: z.unknown()` and answers with issues rather than a rejection (TR-F-024), so the
+> browser holds no second copy of the rules. Three read-only presets and a dead "Use this policy"
+> button became six editable fields with issues rendered beside them.
+>
+> **Four defects the work surfaced, all fixed:**
+>
+> - `evaluatePolicy` answers **422** with the *ordinary* response body carrying `issues`, not the
+>   error envelope. The first client treated any non-2xx as a failure and discarded them, so an
+>   invalid draft produced "something went wrong" and no indication of what.
+> - The evaluator reports issue paths relative to the policy (`minHistoryDays`), not to the request
+>   that carried it. A `policy.` prefix meant no issue ever matched a field, and the panel looked
+>   correct while showing none.
+> - `ScrollMotion`'s fail-safe restored `opacity` after 2.5s, but `autoAlpha: 0` hides through
+>   `visibility: hidden`. The safety net that exists so nothing stays invisible when a scroll trigger
+>   never fires did nothing at all. Found at 390px, where the content below the fold is exactly what
+>   a phone reader must scroll to.
+> - `--shadow-lift` in `globals.css` reads `rgb(19 34 26 / 5 0%)` — a space inside the number makes
+>   the whole declaration invalid. Left as-is and reported rather than silently changed: it is a
+>   visual decision on someone else's palette.
+>
+> **Tokens moved, colours did not.** `styles/tokens.css` holds the palette exactly as shipped.
+> `DESIGN-SYSTEMS.md` section 3 named a different one (`--tr4ce-brand-500`) that was never
+> implemented; the design spec's own completion criteria say the document should reflect the
+> implemented system, so the document was brought into line rather than the interface repainted.
+> AA contrast is verified by `scripts/check-contrast.mjs`, which reads the token values and the
+> `color:`/`background:` pairs out of every stylesheet: **33 co-located pairs, all clearing 4.5:1.**
+> The script reports only pairs that certainly meet — a colour whose background comes from an
+> ancestor is checked by reading the component, and the script says so.
+>
+> **Playwright is not in `pnpm test`.** It needs a database, the API and a web server, and turbo runs
+> `test` everywhere; a 114 MB browser download is not a condition of checking out this repo. Run
+> `pnpm --filter @tr4ce/web e2e`. Twelve tests pass across a desktop and a 390px viewport, the two
+> skips being deliberate (keyboard is a desktop path, column parity a mobile one).
+>
+> **The wallet flow is not in this commit.** The acceptance clause is explicitly *"without a
+> wallet"*, and the read-only half is complete and provable on its own. `apps/web` still pins
+> TypeScript 5.7.3 against the root's 7.0.2, which is most likely to bite when wagmi's types arrive —
+> that must not hold up a finished path. The checklist item stays unticked until it ships.
+>
+> **`/actions/[id]` still renders the illustrative fixture.** It is the wallet page: its data comes
+> from `POST /v1/actions/prepare`, which needs an owner address. There is also a real API gap for the
+> second commit to close — `GET /v1/actions/:id` returns status only, with no calldata, so a user
+> reloading a prepared action cannot see the transactions again.
 
 ## Task 10: Evaluate, deploy, and prove the demo
 

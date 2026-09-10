@@ -1,63 +1,12 @@
 /* ------------------------------------------------------------------ */
 /*  TR4CE — "The Evidence Ledger"                                      */
 /*  Warm paper, deep-green identity, drawn linework, typed verdicts.   */
+/*                                                                     */
+/*  The palette lives in tokens.css so it can be checked in one place.  */
 /* ------------------------------------------------------------------ */
 
-:root {
-  /* Paper */
-  --paper: #f5efe2;
-  --paper-raised: #fcf8ef;
-  --paper-dim: #ece3d0;
+@import "./tokens.css";
 
-  /* Ink */
-  --ink: #13221a;
-  --ink-soft: #3d4f44;
-  --ink-mute: #5c6b61;
-  --ink-faint: rgb(19 34 26 / 14%);
-  --ink-hairline: rgb(19 34 26 / 18%);
-
-  /* Brand greens */
-  --green-deep: #0c4630;
-  --green-core: #10593c;
-  --green-leaf: #1fae5b;
-  --green-bright: #35d06f;
-  --green-wash: #e3f3e8;
-
-  /* Signals */
-  --peri-100: #ececfb;
-  --peri-300: #b9baf5;
-  --peri-500: #8f90ee;
-  --peri-ink: #3f3f9e;
-  --fail-wash: #fbe9e4;
-  --fail-ink: #a12c1d;
-  --tan-200: #e7dcc2;
-  --tan-400: #c9b893;
-  --tan-ink: #5c4d26;
-
-  /* Chrome */
-  --black-panel: #101a14;
-  --cream-on-black: #f2ecdd;
-
-  /* Type */
-  --font-display: "Bricolage Grotesque", "Space Grotesk", Inter, system-ui, sans-serif;
-  --font-serif: "Instrument Serif", Georgia, serif;
-  --font-body: Inter, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* Motion */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-snap: cubic-bezier(0.6, 0, 0.2, 1);
-  --dur-fast: 150ms;
-  --dur-med: 280ms;
-  --dur-reveal: 700ms;
-
-  /* Depth */
-  --shadow-card: 0 1px 0 rgb(19 34 26 / 4%), 0 20px 44px -30px rgb(19 34 26 / 42%);
-  --shadow-lift: 0 2px 0 rgb(19 34 26 / 5%), 0 30px 60px -30px rgb(19 34 26 / 5 0%);
-  --offset-hard: 3px 3px 0 var(--ink);
-  --radius-card: 20px;
-  --radius-soft: 14px;
-}
 
 * { box-sizing: border-box; }
 

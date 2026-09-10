@@ -56,8 +56,16 @@ export function ScrollMotion() {
       }
     });
 
+    /*
+     * If a trigger never fires, nothing may stay hidden.
+     *
+     * `autoAlpha: 0` hides through `visibility: hidden`, not opacity alone, so restoring `opacity`
+     * here left every un-triggered element invisible — the fail-safe looked right and did nothing.
+     * Found by a 390px end-to-end run, where the content below the fold is exactly what a phone
+     * reader has to scroll to.
+     */
     const failSafe = window.setTimeout(() => {
-      gsap.set(revealed, { opacity: 1 });
+      gsap.set(revealed, { autoAlpha: 1 });
     }, 2500);
 
     return () => {
