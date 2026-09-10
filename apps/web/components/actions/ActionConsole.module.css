@@ -164,3 +164,42 @@
   padding-top: 12px;
   border-top: 1px dashed var(--ink-hairline);
 }
+
+/* The call awaiting signature. Marked rather than merely ordered: in a two-call deposit the
+   difference between "already reported" and "next" is what the user is being asked to check. */
+.callNext {
+  border-left: 2px solid var(--green-bright);
+  margin-left: -18px;
+  padding-left: 16px;
+}
+
+.callNext + .call,
+.call + .callNext,
+.callNext + .callNext {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ink-hairline);
+}
+
+.callNext code,
+.call code { display: block; }
+
+/* Blocks the action the user just took, so it is an alert rather than a status. */
+.failure {
+  background: var(--fail-wash);
+  border: 1px solid var(--fail-ink);
+  border-radius: 10px;
+  color: var(--fail-ink);
+  font-size: 13.5px;
+  margin: 0;
+  padding: 12px 16px;
+}
+
+/* Why the sign button is disabled. A disabled control with no stated reason is a dead end. */
+.gateReason {
+  border-top: 1px solid var(--ink-faint);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  margin: 0;
+  padding-top: 14px;
+}

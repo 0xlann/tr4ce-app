@@ -1,6 +1,6 @@
 import type { EvidenceReportV1 } from "@tr4ce/domain";
-import Link from "next/link";
 
+import { PrepareAction } from "../actions/PrepareAction";
 import { formatUsdc, formatUsdcMillions } from "../../src/demo/display";
 import { BlockRuler } from "../ui/BlockRuler";
 import { LimitationCallout } from "../ui/LimitationCallout";
@@ -9,7 +9,13 @@ import { StatusStamp } from "../ui/StatusStamp";
 import { ShareValueChart } from "./ShareValueChart";
 import styles from "./ReportDossier.module.css";
 
-type ReportDossierProps = { name: string; protocol: string; report: EvidenceReportV1 };
+type ReportDossierProps = {
+  name: string;
+  protocol: string;
+  report: EvidenceReportV1;
+  /** The registry's symbol for the underlying, when it has one. Metadata, not evidence. */
+  assetSymbol: string | null;
+};
 
 const ruleLabels = {
   underlyingAsset: "Underlying asset",
@@ -19,7 +25,7 @@ const ruleLabels = {
   minimumWithdrawableAssets: "Withdrawable assets",
 } as const;
 
-export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
+export function ReportDossier({ name, protocol, report, assetSymbol }: ReportDossierProps) {
   const failingRule = report.policy.rules.find((rule) => rule.status !== "PASS");
   const reason = failingRule?.reasonCodes[0] ?? "All five policy rules passed against the observations at this block.";
 
@@ -126,7 +132,14 @@ export function ReportDossier({ name, protocol, report }: ReportDossierProps) {
           <h2 className={`display ${styles.actionTitle}`}>Ready to act on this evidence?</h2>
           <p>Review the exact unsigned calldata before any wallet approval. Preparation is not execution.</p>
         </div>
-        <Link className="pill pillGreen" href="/actions/act_gauntletDeposit01">Prepare action</Link>
+        {/* Carries this report's id, so the prepared action records the evidence that motivated it.
+            Evidence, never a precondition: the API prepares without one. */}
+        <PrepareAction
+          assetSymbol={assetSymbol}
+          chainId={report.vault.chainId}
+          reportId={report.reportId}
+          vaultAddress={report.vault.address}
+        />
       </section>
 
       <details className={styles.json} id="json">

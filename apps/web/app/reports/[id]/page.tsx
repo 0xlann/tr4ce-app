@@ -66,6 +66,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         style={{ paddingBottom: "clamp(72px, 10vh, 120px)", paddingTop: "clamp(48px, 8vh, 88px)" }}
       >
         <ReportDossier
+          assetSymbol={entry?.assetSymbol ?? report.vault.assetSymbol ?? null}
           name={entry?.name ?? entry?.symbol ?? report.vault.address}
           protocol={entry?.adapterKey ?? "erc4626"}
           report={report}

@@ -2,6 +2,7 @@ import {
   actionStatusResponseSchema,
   apiErrorSchema,
   evaluatePolicyResponseSchema,
+  preparedActionResponseSchema,
   reportResponseSchema,
   vaultListResponseSchema,
   type ApiError,
@@ -40,15 +41,15 @@ function baseUrl(): string {
 }
 
 export async function listVaults(chainId: number): Promise<Result<VaultList>> {
-  return request(`/v1/vaults?chainId=${chainId}`, vaultListResponseSchema);
+  return request(`/v1/vaults?chainId=${chainId}`, vaultListResponseSchema, {});
 }
 
 export async function readReport(reportId: string): Promise<Result<ReportResponse>> {
-  return request(`/v1/reports/${encodeURIComponent(reportId)}`, reportResponseSchema);
+  return request(`/v1/reports/${encodeURIComponent(reportId)}`, reportResponseSchema, {});
 }
 
 export async function createReport(body: unknown): Promise<Result<ReportResponse>> {
-  return request("/v1/reports", reportResponseSchema, body);
+  return request("/v1/reports", reportResponseSchema, { body });
 }
 
 /**
@@ -61,17 +62,64 @@ export async function createReport(body: unknown): Promise<Result<ReportResponse
  * without saying what.
  */
 export async function evaluatePolicy(body: unknown): Promise<Result<PolicyEvaluationResponse>> {
-  return request("/v1/policies/evaluate", evaluatePolicyResponseSchema, body, [422]);
+  return request("/v1/policies/evaluate", evaluatePolicyResponseSchema, {
+    body,
+    answeredStatuses: [422],
+  });
 }
 
 export async function readActionStatus(actionId: string): Promise<Result<ActionStatus>> {
-  return request(`/v1/actions/${encodeURIComponent(actionId)}`, actionStatusResponseSchema);
+  return request(`/v1/actions/${encodeURIComponent(actionId)}`, actionStatusResponseSchema, {});
+}
+
+/**
+ * Prepare the calls an operation needs, unsigned.
+ *
+ * The only response that carries calldata. `GET /v1/actions/:id` answers with status alone, so the
+ * transactions a user is asked to sign exist in one place: whatever called this.
+ */
+export async function prepareAction(body: unknown): Promise<Result<PreparedActionResponse>> {
+  return request("/v1/actions/prepare", preparedActionResponseSchema, { body });
+}
+
+/**
+ * Simulate the next unsent call against the current block.
+ *
+ * Takes no body. Also the only way the deposit half of an approve-plus-deposit pair is ever
+ * simulated: before the approval lands that call reverts, so it is left unsimulated on purpose and
+ * reported as `NOT_SIMULATED` rather than as a failure.
+ */
+export async function simulateAction(actionId: string): Promise<Result<ActionStatus>> {
+  return request(
+    `/v1/actions/${encodeURIComponent(actionId)}/simulate`,
+    actionStatusResponseSchema,
+    { post: true },
+  );
+}
+
+/**
+ * Report a hash the caller's wallet already produced.
+ *
+ * Nothing here submits (PRD TR-F-043). The API looks once for the receipt and stores what it finds;
+ * a hash reported before it is mined writes nothing, and reporting the same hash again later is how
+ * an action moves from `submitted` to `confirmed` or `reverted`.
+ */
+export async function reportSubmission(
+  actionId: string,
+  body: unknown,
+): Promise<Result<ActionStatus>> {
+  return request(
+    `/v1/actions/${encodeURIComponent(actionId)}/submitted`,
+    actionStatusResponseSchema,
+    { body },
+  );
 }
 
 export type VaultList = z.infer<typeof vaultListResponseSchema>;
 export type ReportResponse = z.infer<typeof reportResponseSchema>;
 export type PolicyEvaluationResponse = z.infer<typeof evaluatePolicyResponseSchema>;
 export type ActionStatus = z.infer<typeof actionStatusResponseSchema>;
+export type PreparedActionResponse = z.infer<typeof preparedActionResponseSchema>;
 
 /**
  * One request, parsed both ways.
@@ -80,24 +128,32 @@ export type ActionStatus = z.infer<typeof actionStatusResponseSchema>;
  * the one every page here asks. A cached vault list would quietly answer a question about the past
  * while the page around it claimed to be current.
  */
+type RequestOptions = {
+  /** Present means POST with this as the JSON body. Absent means GET, unless `post` says otherwise. */
+  body?: unknown;
+  /** POST with no body at all — what `/v1/actions/:id/simulate` takes. */
+  post?: boolean;
+  /** Non-2xx codes whose body is still the ordinary response, not the error envelope. */
+  answeredStatuses?: readonly number[];
+};
+
 async function request<T>(
   path: string,
   schema: z.ZodType<T>,
-  body?: unknown,
-  /** Non-2xx codes whose body is still the ordinary response, not the error envelope. */
-  answeredStatuses: readonly number[] = [],
+  options: RequestOptions,
 ): Promise<Result<T>> {
+  const answeredStatuses = options.answeredStatuses ?? [];
+
   // Built rather than spread with undefined members: `exactOptionalPropertyTypes` is on, and an
   // explicit `body: undefined` is a different thing from an absent one.
-  const init: RequestInit =
-    body === undefined
-      ? { method: "GET", cache: "no-store" }
-      : {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-          cache: "no-store",
-        };
+  const init: RequestInit = hasBody(options)
+    ? {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(options.body),
+        cache: "no-store",
+      }
+    : { method: options.post === true ? "POST" : "GET", cache: "no-store" };
 
   let response: Response;
 
@@ -140,6 +196,16 @@ async function request<T>(
   }
 
   return { ok: true, value: schema.parse(parseJson(text)) };
+}
+
+/**
+ * Whether a JSON body was supplied.
+ *
+ * `in` rather than `!== undefined`: a caller passing an explicit `body: undefined` means "no body",
+ * and under `exactOptionalPropertyTypes` that is the only way the two can be told apart.
+ */
+function hasBody(options: RequestOptions): boolean {
+  return "body" in options && options.body !== undefined;
 }
 
 function parseJson(text: string): unknown {
