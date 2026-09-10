@@ -66,6 +66,29 @@ test.describe("evidence without a wallet", () => {
     await expect(drawer).toBeVisible();
     await expect(drawer.getByText(/^0x[0-9a-f]{64}$/i).first()).toBeVisible();
     await expect(drawer.getByText(/Block \d+/).first()).toBeVisible();
+
+    /*
+     * And the raw report, which is the other half of "inspect exact provenance": a reader who does
+     * not trust the rendering can read the bytes the API stored.
+     *
+     * Asserted against the id in the URL rather than merely "some JSON is present" — a disclosure
+     * rendering a fixture would satisfy the weaker check while showing a report that is not this one.
+     */
+    // `showModal`, so the rest of the page is inert until this closes. Closing it is part of the
+    // path rather than a test detail: a drawer that cannot be dismissed traps the reader.
+    await drawer.getByRole("button", { name: "Close" }).click();
+    await expect(drawer).toBeHidden();
+
+    const reportId = new URL(page.url()).pathname.split("/").pop() ?? "";
+
+    expect(reportId).toMatch(/^trc_[0-9a-f]{32}$/);
+
+    await page.locator("#json summary").click();
+
+    const json = page.locator("#json pre");
+
+    await expect(json).toContainText(`"reportId": "${reportId}"`);
+    await expect(json).toContainText('"schemaVersion": "1.0.0"');
   });
 
   test("explains an unknown rule rather than scoring it", async ({ page }) => {

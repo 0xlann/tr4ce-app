@@ -472,8 +472,10 @@ Acceptance: An MCP client can discover, evaluate, and prepare without unrestrict
 - [x] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
 - [x] Build report calculation/provenance disclosure and JSON view.
 - [ ] Add wagmi action flow with chain/account invalidation and exact wallet preview.
-- [x] Add loading, stale, partial, reorged, simulation-failed, submitted, confirmed, and reverted states.
-- [x] Write Playwright path: policy → mixed results → report → simulation → mocked wallet handoff; use fork test for real EVM behavior.
+- [x] Add partial and stale states.
+- [ ] Add loading, reorged, simulation-failed, submitted, confirmed, and reverted states.
+- [x] Write Playwright path: policy → mixed results → report → provenance.
+- [ ] Extend the Playwright path through simulation and a mocked wallet handoff; use fork test for real EVM behavior.
 - [x] Test keyboard-only flow and mobile evidence parity.
 - [x] Commit as `feat(tr4ce): ship evidence-first interface`.
 
@@ -536,6 +538,20 @@ Acceptance: A user can explain a failed/unknown rule and inspect exact provenanc
 > from `POST /v1/actions/prepare`, which needs an owner address. There is also a real API gap for the
 > second commit to close — `GET /v1/actions/:id` returns status only, with no calldata, so a user
 > reloading a prepared action cannot see the transactions again.
+
+> **Two v1 contract gaps sit behind the unticked state items.** `DataStateBanner` declares six states
+> and carries copy for all six, but only `partial` and `stale` are reachable today, and `reorged`
+> cannot be driven at all: `evidenceReportV1Schema` exposes no `canonical` or invalidation field, so
+> the database knows a report was invalidated by a reorg and the contract has no way to say it. That
+> is a v1 change, the same wall the policy-optional gap ran into. The four action-lifecycle states
+> live on `/actions/[id]`, which is the wallet page — they defer with it, alongside the
+> `GET /v1/actions/:id` calldata gap above.
+>
+> **The JSON disclosure was renamed rather than added.** It already existed, and its summary read
+> *"View illustrative report JSON"* — accurate against a fixture and wrong the moment the page began
+> rendering a stored report. Two neighbouring lines said the same thing. The rounding row is now
+> stated explicitly as the engine's floor (TR-F-013) with a note that it is not read back from the
+> report, because v1 carries no `rounding` field either.
 
 ## Task 10: Evaluate, deploy, and prove the demo
 
