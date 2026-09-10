@@ -471,11 +471,11 @@ Acceptance: An MCP client can discover, evaluate, and prepare without unrestrict
 - [x] Build disconnected search and typed policy builder first.
 - [x] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
 - [x] Build report calculation/provenance disclosure and JSON view.
-- [ ] Add wagmi action flow with chain/account invalidation and exact wallet preview.
-- [x] Add partial and stale states.
-- [ ] Add loading, reorged, simulation-failed, submitted, confirmed, and reverted states.
-- [x] Write Playwright path: policy → mixed results → report → provenance.
-- [ ] Extend the Playwright path through simulation and a mocked wallet handoff; use fork test for real EVM behavior.
+- [x] Add wagmi action flow with chain/account invalidation and exact wallet preview.
+- [x] Add partial, stale, simulation-failed, submitted, confirmed and reverted states.
+- [ ] Add loading and reorged states.
+- [x] Write Playwright path: policy → mixed results → report → provenance → simulation → mocked wallet handoff.
+- [ ] Use a fork test for real EVM behavior.
 - [x] Test keyboard-only flow and mobile evidence parity.
 - [x] Commit as `feat(tr4ce): ship evidence-first interface`.
 
@@ -552,6 +552,58 @@ Acceptance: A user can explain a failed/unknown rule and inspect exact provenanc
 > rendering a stored report. Two neighbouring lines said the same thing. The rounding row is now
 > stated explicitly as the engine's floor (TR-F-013) with a note that it is not read back from the
 > report, because v1 carries no `rounding` field either.
+
+> ### Second commit: the wallet flow
+>
+> **The console stopped remembering and started asking.** It ran on a `useReducer` with six buttons
+> that walked the states by hand. Every one of those is gone: the API owns `prepared`, `simulated`,
+> `submitted`, `confirmed`, `reverted`, `expired` and `invalidated`, and judges them against the
+> chain when asked. The browser now owns exactly one thing — whether the user is in front of their
+> wallet — and `signingGate` is a pure function of the two, tested on its own.
+>
+> **Calldata lives in the tab that prepared it.** `POST /v1/actions/prepare` is the only response in
+> the contract carrying transactions; `GET /v1/actions/:id` answers with status alone. So a reload or
+> a shared link shows progress and says, in words, why it cannot show the bytes. Re-preparing to
+> recover them is not an option and the code says why: `prepared_action_live_binding_key` is unique
+> over the calldata hash only `WHERE status IN ('prepared','simulated')`, so once a hash is reported
+> the partial index no longer covers the row and preparing again would insert a *second* action.
+>
+> **`confirmed` and `reverted` are implemented but have never been observed here.** They are rendered
+> straight from `status.outcome`, and the mapping is unit-tested, but reaching them needs a
+> transaction that actually lands — which is the fork test still unticked above. `submitted` *is*
+> demonstrated end-to-end. Stated rather than implied, because "the state exists" and "the state has
+> been seen" are different claims.
+>
+> **Nothing is broadcast in the tests, and that is deliberate.** wagmi's mock connector forwards
+> `eth_sendTransaction` to whatever RPC the transport names, so the suite intercepts that request.
+> The interception is also what makes the strongest assertion possible: the `data` handed to the
+> wallet is compared character-for-character with the `data` rendered on the page. "Exact wallet
+> preview" was a claim until something compared the two strings. A second test reads TR-F-034 off the
+> same bytes — the approval encodes the exact amount and is not the max-uint pattern.
+>
+> **The transport carries no key.** `http()` with no URL uses the chain's public endpoint. The
+> project's RPC URLs carry an Alchemy key, and anything wagmi needed in the browser would inline it
+> into the bundle. Nothing on the wallet path wants an authenticated node: status comes from the API,
+> and signing goes to the wallet's own provider.
+>
+> **Two things the work turned up that are not web bugs:**
+>
+> - `POST /v1/actions/:id/submitted` reports a duplicate `(chain_id, transaction_hash)` as
+>   `ACTION_NOT_AVAILABLE` carrying a raw `Failed query: insert into ...`. The constraint is right —
+>   one hash belongs to one call of one action — but `messageOf(error)` drops `error.cause`, so the
+>   one sentence that explains the refusal never reaches the caller. Left for a follow-up rather than
+>   widened into this commit.
+> - Migration `0004_prepared_actions.sql` had never run on the local development database, so every
+>   prepare answered 500 until it was applied. It is still unapplied on Supabase, and Task 10's
+>   deploy item depends on it.
+>
+> **TypeScript was aligned first, on its own.** `apps/web` pinned 5.7.3 against the root's 7.0.2 and
+> was the only package pinning a compiler at all. Bumped in a separate commit before wagmi arrived,
+> so a break would read as a compiler change rather than as new dependencies. Nothing needed changing.
+>
+> **`NEXT_PUBLIC_TR4CE_WALLET_MODE=mock` must never be set in production.** It offers a connector that
+> signs nothing while the app reports hashes to the API. `walletMode()` is exported and tested so the
+> exact-string check is asserted rather than trusted to a comment.
 
 ## Task 10: Evaluate, deploy, and prove the demo
 

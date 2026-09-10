@@ -1,0 +1,37 @@
+.bar {
+  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding: clamp(18px, 2.2vw, 26px);
+}
+
+.bar .monoLabel { margin: 0 0 6px; }
+
+/* Full width, never truncated: this address is what a signature will be attributed to, and the
+   elided middle is exactly what tells two accounts of the same wallet apart. */
+.value { margin: 0; }
+
+.value code {
+  background: var(--paper-dim);
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  padding: 3px 7px;
+}
+
+.chain { color: var(--ink-soft); font-size: 12.5px; margin: 8px 0 0; }
+
+.mismatch {
+  background: var(--fail-wash);
+  border: 1px solid var(--fail-ink);
+  border-radius: 10px;
+  color: var(--fail-ink);
+  font-size: 13px;
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
+  padding: 10px 14px;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }

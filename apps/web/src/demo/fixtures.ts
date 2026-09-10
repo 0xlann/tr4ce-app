@@ -1,12 +1,10 @@
 import {
   evidenceReportV1Schema,
   policyV1Schema,
-  preparedActionV1Schema,
   type EvidenceReportV1,
   type PolicyRuleResult,
   type PolicyRuleStatus,
   type PolicyV1,
-  type PreparedActionV1,
 } from "@tr4ce/domain";
 import type { PolicyPreset, VaultSummary } from "./types";
 
@@ -167,47 +165,6 @@ const reportsByPreset: Record<PolicyPreset, readonly VaultSummary[]> = {
   ],
 };
 
-const preparedAction = preparedActionV1Schema.parse({
-  schemaVersion: "1.0.0",
-  actionId: "act_gauntletDeposit01",
-  operation: "deposit",
-  vault: vaultMeta[0].address,
-  asset: BASE_USDC,
-  owner: OWNER,
-  receiver: OWNER,
-  amount: "10000000000",
-  // Both calls, in signing order. The UI already said "exact approval then direct deposit"; until
-  // the contract became an array it could only show the second one.
-  transactions: [
-    {
-      chainId: 8453,
-      to: BASE_USDC,
-      // approve(vault, 10000000000) — the exact amount, never unlimited (PRD TR-F-034).
-      data: "0x095ea7b3000000000000000000000000ee8f4ec5672f09119b96ab6fb59c27e1b7e44b6100000000000000000000000000000000000000000000000000000002540be400",
-      value: "0",
-      kind: "approve",
-    },
-    {
-      chainId: 8453,
-      to: vaultMeta[0].address,
-      // deposit(10000000000, owner)
-      data: "0x6e553f6500000000000000000000000000000000000000000000000000000002540be4000000000000000000000000001111111111111111111111111111111111111111",
-      value: "0",
-      kind: "deposit",
-    },
-  ],
-  // Shares previewDeposit expects for this amount. A preview, never a promise.
-  previewed: "9784120000",
-  simulation: {
-    status: "SUCCEEDED",
-    blockNumber: "50879900",
-    blockHash: HASH_B,
-    expiresAt: "2026-09-05T00:01:00.000Z",
-    gasEstimate: "182000",
-    reasonCodes: [],
-  },
-});
-
 export function getPolicyPreset(preset: PolicyPreset): PolicyV1 {
   return policies[preset];
 }
@@ -220,8 +177,3 @@ export function getReport(id: string, preset: PolicyPreset = "balanced"): Eviden
   return reportsByPreset[preset].find((vault) => vault.id === id || vault.report.reportId === id)?.report;
 }
 
-export function getPreparedAction(id: string): PreparedActionV1 | undefined {
-  return id === preparedAction.actionId ? preparedAction : undefined;
-}
-
-export const demoActionId = preparedAction.actionId;

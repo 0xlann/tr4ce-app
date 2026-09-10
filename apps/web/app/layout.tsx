@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Inter, Bricolage_Grotesque } from "next/font/google";
 
 import { ScrollMotion } from "../components/ui/ScrollMotion";
+import { WalletProvider } from "../components/wallet/WalletProvider";
 import "../styles/globals.css";
 
 const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
@@ -58,7 +59,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className={`${body.variable} ${display.variable} ${serif.variable} ${mono.variable}`}>
         <a className="skipLink" href="#main-content">Skip to content</a>
-        {children}
+        {/*
+          Mounted once, at the root, rather than per page. Preparing an action happens on
+          `/reports/[id]` and signing it on `/actions/[id]`, and a provider mounted per route would
+          be torn down and rebuilt by the navigation between them — dropping the connection in the
+          middle of the one flow that spans two pages.
+        */}
+        <WalletProvider>{children}</WalletProvider>
         <ScrollMotion />
       </body>
     </html>
