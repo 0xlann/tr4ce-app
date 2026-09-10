@@ -182,10 +182,28 @@ describe("canResimulate", () => {
 describe("awaitingReceipt", () => {
   it("is true for a hash reported but not yet observed", () => {
     /*
-     * The mechanism that is easy to get backwards: GET never looks at a receipt. Only reporting the
-     * same hash again does, which is why this needs a name.
+     * The shape the API actually returns here, confirmed against it: once the operation call's hash
+     * is reported the outcome exists, with `status` null until a receipt is found. That distinction
+     * is the whole point — a reported hash is not an outcome.
+     *
+     * The mechanism is easy to get backwards: GET never looks at a receipt. Only reporting the same
+     * hash again does, which is why this needs a name.
      */
-    expect(awaitingReceipt(status({ status: "submitted", sentCount: 2, nextCallIndex: null }))).toBe(true);
+    const reported = status({
+      status: "submitted",
+      sentCount: 2,
+      nextCallIndex: null,
+      outcome: actionOutcomeSchema.parse({
+        transactionHash: `0x${"b".repeat(64)}`,
+        status: null,
+        confirmedBlockNumber: null,
+        previewed: "999999",
+        actual: null,
+        delta: null,
+      }),
+    });
+
+    expect(awaitingReceipt(reported)).toBe(true);
   });
 
   it("is false once the receipt says the transaction succeeded", () => {

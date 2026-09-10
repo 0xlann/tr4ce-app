@@ -604,6 +604,18 @@ Acceptance: A user can explain a failed/unknown rule and inspect exact provenanc
 > **`NEXT_PUBLIC_TR4CE_WALLET_MODE=mock` must never be set in production.** It offers a connector that
 > signs nothing while the app reports hashes to the API. `walletMode()` is exported and tested so the
 > exact-string check is asserted rather than trusted to a comment.
+>
+> Two consequences of that flag worth stating. `pnpm e2e:wallet` builds with it and leaves that build
+> in `.next`, so a `next start` afterwards serves the mock connector from what looks like an ordinary
+> build — harmless in a deploy, which builds fresh, and a trap locally. And the shipping
+> configuration is the one *without* the flag, so the read-only suite was run against a default build
+> as well: twelve pass, the wallet specs skip themselves, and `WalletBar` now mounting on every
+> report page changes nothing there.
+>
+> **The interface prepares deposits only.** `prepareActionRequestSchema`, the API and the MCP's
+> `prepare_redeem` all take both operations; `PrepareAction` sends `operation: "deposit"` and offers
+> no choice. A deliberate MVP narrowing rather than a limit of the stack, and the redemption path is
+> a form field rather than new plumbing.
 
 ## Task 10: Evaluate, deploy, and prove the demo
 
