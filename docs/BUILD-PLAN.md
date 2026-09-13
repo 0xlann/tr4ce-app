@@ -132,7 +132,12 @@ Acceptance: The same module and output schema emit data for at least three verif
 > **Deviation from ERD section 6:** minimal `evidence_report`, `report_observation`, and an
 > append-only `reorg_invalidation` table ship in `0001_registry_observations.sql`, because
 > "invalidates every promoted dependent" cannot be demonstrated against tables that do not exist.
-> Task 6 extends these columns; it does not replace them.
+> Task 6 replaces both tables rather than extending them, correcting what this note originally
+> predicted: ERD section 6 types `evidence_report.id` as `text` and the report id is
+> `trc_<hex>`, so the primary key changes type. `0002_reports_and_policies.sql` drops and
+> recreates them behind a guard that refuses to run if either holds a row — both had only ever
+> been empty. `reorg_invalidation` survives unchanged apart from `subject_id` widening to
+> `text`, which it needs in order to keep naming an invalidated report.
 
 Acceptance: Normal reorgs are removed in staging before promotion; replay is idempotent; a detected deep reorg invalidates every promoted dependent.
 
@@ -157,13 +162,38 @@ export function observedShareValueReturn(
 export function buildEvidence(input: EvidenceInput): EvidenceReportV1;
 ```
 
-- [ ] Write failing tests for positive/negative/zero return, round-down boundary, zero denominator, missing start, incompatible decimals, and actual elapsed window.
-- [ ] Implement reduced rational arithmetic and explicit basis-point rounding.
-- [ ] Write flow tests that exclude mint/burn transfer duplication and separate deposits from withdrawals.
-- [ ] Write report tests proving every value carries source references and limitations.
-- [ ] Add a reproducibility fixture: canonical input hash and report JSON remain stable.
-- [ ] Run package tests and property cases across bounded bigint ranges.
-- [ ] Commit as `feat(tr4ce): calculate reproducible vault evidence`.
+- [x] Write failing tests for positive/negative/zero return, round-down boundary, zero denominator, missing start, incompatible decimals, and actual elapsed window.
+- [x] Implement reduced rational arithmetic and explicit basis-point rounding.
+- [x] Write flow tests that exclude mint/burn transfer duplication and separate deposits from withdrawals.
+- [x] Write report tests proving every value carries source references and limitations.
+- [x] Add a reproducibility fixture: canonical input hash and report JSON remain stable.
+- [x] Run package tests and property cases across bounded bigint ranges.
+- [x] Commit as `feat(tr4ce): calculate reproducible vault evidence`.
+
+> **Added beyond the file list:** `src/capability.ts` and `src/canonical.ts`. The manifest stores
+> capability evidence as probe arrays, so reducing an array to a per-method status needs a home
+> where the rule "`nonstandard_zero` becomes UNKNOWN, never FAIL" is enforced once instead of at
+> each call site. `canonical.ts` holds the deterministic serialiser the report identifier hashes.
+>
+> **`buildEvidence` returns a draft, not an `EvidenceReportV1`.** The V1 contract requires a
+> `policy` block, but policy is evaluated *against* evidence — taking an evaluation as input here
+> would invert that dependency inside the signature. `attachPolicy` closes the draft once Task 5's
+> evaluator has run, and parses the result against `evidenceReportV1Schema` so the published shape
+> is still proven here. An incomplete draft is refused rather than filled: the V1 contract has no
+> way to express "no share value", and emitting one anyway would mean inventing a number.
+>
+> **Deviation from ARCHITECTURE section 7:** that document describes
+> `CapabilityStatus = "supported" | "nonstandard" | "reverts" | "unknown"` over a flat
+> `{ maxWithdraw: CapabilityStatus, ... }` record. Neither shipped. The real contract is
+> `capabilityStatusSchema` in `@tr4ce/domain` — five members, `"supported" | "reverted" |
+> "nonstandard_zero" | "ambiguous" | "unsupported"` — over probe arrays, already written into
+> `manifest.json` for four verified vaults and the `vault_capability.capabilities` column. The
+> manifest is the event-period artifact; the document is stale, and the code follows the manifest.
+>
+> **ARCHITECTURE section 5's high-precision decimal library is not yet applicable.**
+> `observedShareValueSchema` carries no annualized field, so `returnBps` is reachable with bigint
+> rational arithmetic alone. Annualization is an optional display concern; when it arrives it must
+> be isolated in this package as that section requires.
 
 Acceptance: Missing/incompatible evidence yields structured `UNKNOWN` inputs; no `number` arithmetic touches token amounts.
 
@@ -178,14 +208,36 @@ Acceptance: Missing/incompatible evidence yields structured `UNKNOWN` inputs; no
 
 **Produces:** Current raw reads, five-rule `PolicyV1`, per-rule decision.
 
-- [ ] Pin one fork block for each curated vault and test every required ERC-4626 method.
-- [ ] Preserve call value/revert and adapter interpretation separately.
-- [ ] Write policy-schema tests for decimal strings, five supported rules, no unknown keys, bounded windows, and valid owner address.
-- [ ] Implement truth table: any fail → fail; otherwise any required unknown → unknown; all pass → pass.
-- [ ] Add test where a documented non-standard `maxWithdraw == 0` becomes `UNKNOWN`, not `FAIL` or `PASS`.
-- [ ] Add optional natural-language compiler behind an interface; test invalid provider JSON never reaches evaluator.
-- [ ] Run policy unit and chain fork tests.
-- [ ] Commit as `feat(tr4ce): evaluate typed vault policy`.
+- [x] Pin one fork block for each curated vault and test every required ERC-4626 method.
+- [x] Preserve call value/revert and adapter interpretation separately.
+- [x] Write policy-schema tests for decimal strings, five supported rules, no unknown keys, bounded windows, and valid owner address.
+- [x] Implement truth table: any fail → fail; otherwise any required unknown → unknown; all pass → pass.
+- [x] Add test where a documented non-standard `maxWithdraw == 0` becomes `UNKNOWN`, not `FAIL` or `PASS`.
+- [x] Add optional natural-language compiler behind an interface; test invalid provider JSON never reaches evaluator.
+- [x] Run policy unit and chain fork tests.
+- [x] Commit as `feat(tr4ce): evaluate typed vault policy`.
+
+> **Deviation from TECH-STACK section 9 ("Anvil/fork + viem"):** the fork tests are direct
+> `eth_call`s at pinned blocks against an archival provider rather than an anvil fork. The binding
+> constraint in that section is the sentence after it — "Do not mock the EVM behavior that the
+> product claims to verify" — which pinned real calls satisfy, with identical values and no process
+> to manage. Anvil belongs to Task 7, which needs a writable fork to simulate state-changing calls.
+>
+> **`packages/domain/src/policy.ts` was made strict.** `z.object` silently strips unknown keys, so
+> the shipped schema would have accepted an LLM-authored policy carrying an invented operator and
+> quietly discarded it. `policyRuleResultSchema` is strict for a sharper reason: it is what the
+> evaluator emits, and a loose schema there would leave "a model cannot mark a rule pass" resting on
+> convention rather than on the type system.
+>
+> **Two rules need facts the evidence draft cannot carry**, both resolved by the caller through
+> `packages/chain`: the vault's deployment timestamp, without which `minimumHistory` cannot tell a
+> too-young vault (FAIL) from history nobody indexed (UNKNOWN); and the owner the account reads were
+> taken for, without which evidence gathered for one wallet could satisfy a rule written about
+> another.
+>
+> **`previewDeposit`, `previewRedeem`, `maxRedeem` and `totalSupply` are read and probed but feed no
+> rule.** PRD section 8.1 requires them recorded with raw outcomes; Task 7 is what consumes the
+> previews. Noted so nobody hunts for a missing rule.
 
 Acceptance: Manual typed policy works with the LLM disabled; the LLM cannot add an operator or mark a rule pass.
 
@@ -201,16 +253,41 @@ Acceptance: Manual typed policy works with the LLM disabled; the LLM cannot add 
 
 **Produces:** Versioned HTTP endpoints with OpenAPI and immutable report URLs.
 
-- [ ] Implement the remaining ERD migrations with report-observation foreign keys.
-- [ ] Write a test that attempts to build a report from non-canonical observations and expects rejection.
-- [ ] Implement `GET /v1/vaults`, `POST /v1/reports`, `GET /v1/reports/:id`, and `POST /v1/policies/evaluate`.
-- [ ] Make report creation idempotent on canonical input hash + versions.
-- [ ] Validate every request and response against shared schemas.
-- [ ] Generate OpenAPI and fail CI on schema drift.
-- [ ] Run API integration tests against a fresh database.
-- [ ] Commit as `feat(tr4ce): expose immutable evidence api`.
+- [x] Implement the remaining ERD migrations with report-observation foreign keys.
+- [x] Write a test that attempts to build a report from non-canonical observations and expects rejection.
+- [x] Implement `GET /v1/vaults`, `POST /v1/reports`, `GET /v1/reports/:id`, and `POST /v1/policies/evaluate`.
+- [x] Make report creation idempotent on canonical input hash + versions.
+- [x] Validate every request and response against shared schemas.
+- [x] Generate OpenAPI and fail CI on schema drift.
+- [x] Run API integration tests against a fresh database.
+- [x] Commit as `feat(tr4ce): expose immutable evidence api`.
 
-Acceptance: Repeating a request over identical inputs returns the same report; HTTP output equals the domain schema exactly.
+> **Report identity.** `POST /v1/reports` is idempotent because `evidence_report.id` is derived
+> from the observations — `trc_` plus the first 32 hex of `canonical_input_hash`. Getting there
+> required a fix: `generatedAt` was inside the hashed surface, so two requests a second apart
+> produced two ids. It is no longer, and the API integration test proves the property by serving
+> the two requests from apps whose clocks are twelve hours apart.
+>
+> **Deviation from ERD section 6:** the id is content-derived rather than "sortable generated".
+> That makes "the same observations name the same report" true by construction instead of by a
+> lookup before every insert. Ordering is served by `created_at` and `as_of_block_number`, both
+> indexed, and `canonical_input_hash` remains a separate column with the unique index the ERD asks
+> for.
+>
+> **A short window still produces a report.** When the requested window reaches further back than
+> our index, the earliest observation we hold opens it. Refusing outright would discard evidence we
+> do have; instead the report states the spacing it actually measured, adds a limitation naming the
+> shortfall, and the history rule reports UNKNOWN — our coverage falling short, not the vault being
+> young. Nothing is quoted over a period it was not measured over.
+>
+> **`actions.ts` is not built.** It appears under **Files** above, but no checklist item calls for
+> it and Task 7 owns prepared and simulated actions. A stub route would have no behaviour to test.
+>
+> **`not_evaluated` is unreachable through this API.** The status exists because ERD section 6
+> defines it, but `evidenceReportV1Schema` requires a `policy` block, so an evidence-only report has
+> no wire shape to be served as. Every report this API produces carries an evaluation.
+
+Acceptance: Repeating a request over identical inputs returns the same report; HTTP output equals the domain schema exactly. Both verified: the API integration suite counts rows in `evidence_report` rather than comparing responses, and every response is parsed through its domain schema before it is served.
 
 ## Task 7: Prepare and simulate direct ERC-4626 actions
 
@@ -223,15 +300,91 @@ Acceptance: Repeating a request over identical inputs returns the same report; H
 
 **Produces:** Unsigned action arrays, bound simulation, status tracking.
 
-- [ ] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
-- [ ] Build calls directly to verified asset/vault; refuse unlimited allowance.
-- [ ] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
-- [ ] Persist no signature; accept transaction hash only after wallet submission.
-- [ ] Decode receipt events and show preview-versus-actual values.
-- [ ] Run fork and API tests.
-- [ ] Commit as `feat(tr4ce): prepare simulated vault actions`.
+- [x] Write fork tests for exact approval + deposit, redemption, wrong asset, over-balance, stale block, and changed account.
+- [x] Build calls directly to verified asset/vault; refuse unlimited allowance.
+- [x] Bind simulation to chain/account/to/data/value/block/capability version and expire at 3 blocks or 60 seconds.
+- [x] Persist no signature; accept transaction hash only after wallet submission.
+- [x] Decode receipt events and show preview-versus-actual values.
+- [x] Run fork and API tests.
+- [x] Commit as `feat(tr4ce): prepare simulated vault actions`.
 
-Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation.
+> **Two findings the Anvil fork produced**, both now behaviour rather than surprises.
+>
+> The second call of an approve-plus-deposit pair cannot be simulated before the first lands — it
+> reverts for want of the allowance. `nextCallToSimulate` states that, and the API simulates only
+> the next unsent call: attaching a success status and a gas figure to the deposit would have
+> claimed something nobody had established. Once the approval is mined the block has moved, so the
+> deposit needs its own simulation anyway, which is the ordinary binding rule rather than a special
+> case.
+>
+> On the Morpho vault `maxRedeem` sits fractionally below the owner's own share balance — about one
+> part in a hundred million, from the rounding that protects the vault. A "redeem everything" button
+> wired to `balanceOf` therefore builds a transaction the chain refuses. Both arms are tested.
+>
+> **The no-signing guarantee is checked, not asserted.** Two tests read every non-test source file
+> in `packages/chain` and `apps/api` and fail if any names viem's wallet half — a wallet client
+> constructed at runtime type-checks perfectly well, so types alone would not have carried the
+> claim. Both were verified by introducing a submission path and watching them fail.
+>
+> **Deviation from the file list:** the calldata builders live in `packages/chain/src/prepare.ts`
+> rather than split across `prepare-deposit.ts` and `prepare-redeem.ts`. They share every
+> precondition helper and the failure type; two files would have meant one importing the other for
+> no gain in navigability.
+>
+> **`preparedActionV1Schema` changed shape.** It held a single `unsignedTransaction`, which cannot
+> express a deposit that needs an approval first. Now `transactions`, an array — matching what this
+> task, the ERD, and the action console's own copy already assumed. Each entry carries its `kind`,
+> and the schema also carries `previewed`.
+>
+> ---
+>
+> **The first cut of this task shipped a flow that could not be completed.** Found by running the
+> approve-then-deposit sequence through the routes rather than through the chain: reporting the
+> approval's hash moved the action to `submitted`, and the deposit then had nowhere to go — it could
+> not be simulated, its hash could not be reported, and `transaction_receipt` had room for one row
+> per action. The fork test passed throughout, because it drives the chain directly and never asks
+> the API to represent the pair.
+>
+> The cause was one decision: the block was part of the action's identity. `calldata_hash` and the
+> `act_` id were both derived from the *simulation* binding, which is pinned to a block. ERD section
+> 7 puts `calldata_hash` on `prepared_action` and `block_number` on `simulation`, and this is why.
+>
+> What changed:
+>
+> - `actionDigest` covers chain, account, every call in signing order, and capability version —
+>   never the block. `bindingDigest` still covers one simulation, block included.
+> - **The action id is generated, not derived.** A report is a pure function of its observations, so
+>   naming it after them is right; an action is an intent to spend, and repeating one is legitimate.
+>   TR4CE's approval is exact, so a completed deposit leaves the allowance at zero and an identical
+>   second deposit is a second real action — under a content-derived id it would have been
+>   unpreparable forever. Idempotency moved to a partial unique index on `calldata_hash` covering
+>   only actions still awaiting signature, which is where it means something.
+> - `sent_count`, `previewed_amount` and `capability_version` on `prepared_action`; `call_index` on
+>   `simulation`; `call_index` and `actual_amount` on `transaction_receipt`. A CHECK refuses
+>   `submitted` while any call still lacks a hash.
+> - `report_id` became a composite foreign key to `(id, vault_id)`. It was a plain reference, so an
+>   action on one vault could cite a report about another — the bug `report_observation`'s own
+>   composite keys exist to prevent.
+> - **`POST /v1/actions/{id}/simulate`.** The acceptance clause says an action is non-signable
+>   *"until resimulation"*, and there was no resimulation path at all. It is also the only way the
+>   deposit of a pair is ever simulated.
+> - `GET /v1/actions/{id}` refuses to call an action signable when the newest simulation is for a
+>   different call than the one awaiting signature. Without that, a wallet could sign a deposit on
+>   an approval's gas estimate (TR-F-032). Verified by removing the check and watching the flow test
+>   fail.
+>
+> **Second deviation from ERD section 7:** `transaction_receipt` is keyed `(prepared_action_id,
+> call_index)`, where the ERD writes `prepared_action_id` UNIQUE. One receipt per action cannot
+> represent the approve-plus-deposit pair SMART-CONTRACT.md section 4 requires — the approval's hash
+> would overwrite the deposit's or have nowhere to go. Recorded here rather than left as an
+> undocumented difference, on the same terms as the content-derived report id in Task 6.
+>
+> **`invalidateAction` has no caller in this task.** It is the write side of the reorg path, which
+> `reorg_invalidation.subject_id` became TEXT for in Task 6. It is kept and tested rather than given
+> an invented caller: an expired budget is *not* a reason to write `expired`, because resimulating
+> revives the action and a terminal status would be a lie about that.
+
+Acceptance: There is no service method that signs or submits; changing any bound field makes the action non-signable until resimulation. Both verified: the source-level checks above cover the first, and `checkSignable` is exercised by mutating each of the eight bound fields on its own — an aggregate check would pass while seven went unbound.
 
 ## Task 8: Expose MCP tools and public agent skill
 
@@ -242,14 +395,68 @@ Acceptance: There is no service method that signs or submits; changing any bound
 - Create: `evals/{prompts.jsonl,rubric.json}`
 - Test: `apps/mcp/src/tools.protocol.test.ts`
 
-- [ ] Register exactly six tools from the integrations specification.
-- [ ] Reuse application services and Zod-generated schemas; do not duplicate calculations.
-- [ ] Assert prepare tools return unsigned data and no submit method exists.
-- [ ] Document units, limitations, freshness, errors, and wallet approval in `SKILL.md`.
-- [ ] Test HTTP report JSON and MCP report JSON for canonical equality.
-- [ ] Commit as `feat(tr4ce): add typed agent evidence tools`.
+- [x] Register exactly six tools from the integrations specification.
+- [x] Reuse application services and Zod-generated schemas; do not duplicate calculations.
+- [x] Assert prepare tools return unsigned data and no submit method exists.
+- [x] Document units, limitations, freshness, errors, and wallet approval in `SKILL.md`.
+- [x] Test HTTP report JSON and MCP report JSON for canonical equality.
+- [x] Commit as `feat(tr4ce): add typed agent evidence tools`.
 
 Acceptance: An MCP client can discover, evaluate, and prepare without unrestricted GraphQL or transaction submission.
+
+> **The tools dispatch into the Hono app in process, rather than calling services one by one.**
+> Two things forced it, and both are worth stating because the checklist says "do not duplicate
+> calculations" without saying where the duplication would come from.
+>
+> `POST /v1/policies/evaluate` orchestrates `validatePolicy` → `requireVault` → `buildDraft` →
+> `evaluatePolicy` inside its route handler; there is no `policy-service.ts`. And the structured
+> error envelope is applied by `app.onError`. A tool layer calling services directly would have to
+> reimplement both. Going through the routes means there is no second implementation at all, which
+> makes "MCP and UI return the same report schema" (PRD section 13, step 7) structural.
+>
+> **`@tr4ce/api` gained an `exports` map**, so it is now an app that is also a library. The tidier
+> shape — lifting the services *and* the route orchestration into a package of their own — would not
+> change a line of what the tools do, and is noted in `apps/api/src/index.ts` as the thing to do
+> later rather than left implicit.
+>
+> **What "side effect: None" means in INTEGRATIONS section 7.** It cannot mean "writes nothing":
+> `prepare_deposit` persists a prepared action and its simulation, and `get_evidence` persists a
+> report. It means no chain state changes and no funds move. That reading is written into
+> `SKILL.md`, along with its consequence — these tools are never described as read-only, because
+> two of them write.
+>
+> **stdio only.** A streamable-HTTP transport is Task 10's deployment item; adding it here would be
+> configuration that the in-memory protocol tests do not exercise either way. The server refuses to
+> start without `RPC_URL_BASE`: three of the six tools need a chain, and without one the action
+> routes answer 501 — half the advertised surface failing on use rather than at startup.
+>
+> **A control that did not fail, reported rather than quietly dropped.** The plan said to prove the
+> byte-equality test by replacing the response pass-through with
+> `JSON.stringify(await response.json())`. The suite stayed green: for the shapes this contract
+> carries, a round trip produces identical bytes — every large number is already a decimal string
+> and no key is integer-like. The test does catch reshaping and reformatting (both verified by
+> breaking them), and the pass-through is kept because it is byte-identical for *any* payload rather
+> than only for today's. The comment in `respond()` says exactly that instead of claiming a risk
+> that does not exist here.
+>
+> **A product gap the prompt set surfaced, left open deliberately.** `get_evidence` requires a full
+> five-rule policy, because `evidenceReportV1Schema.policy` is a required block of the v1 report
+> contract. So the most natural agent question — "what did this vault do over the last week?" —
+> cannot be answered without the user supplying criteria, and an agent that invents thresholds
+> produces a `status` verdict about numbers nobody asked for.
+>
+> Closing it means making the policy evaluation optional in a published contract: a schema-version
+> bump, a change to what `canonical_input_hash` covers and therefore to report identity, and a change
+> to the OpenAPI document and the web report page. That is Task 6's contract, not Task 8's, and doing
+> it here would silently re-identify every stored report. The storage layer is already ready —
+> migration 0002's `evidence_report_policy_status_check` allows a null `policy_version_id` paired
+> with `status = 'not_evaluated'` — so the work is in the contract, not the database.
+>
+> For now the constraint is stated in `SKILL.md` with the instruction to ask for criteria rather than
+> invent them, and the affected eval prompt states its criteria.
+>
+> `evals/prompts.jsonl` and `evals/rubric.json` are the fixed prompt set and scoring only. Running
+> them is Task 10.
 
 ## Task 9: Build the evidence-first web product
 
@@ -260,17 +467,155 @@ Acceptance: An MCP client can discover, evaluate, and prepare without unrestrict
 - Create: `apps/web/styles/tokens.css`
 - Test: `apps/web/e2e/tr4ce.spec.ts`
 
-- [ ] Implement design tokens from `DESIGN-SYSTEMS.md` and verify AA contrast.
-- [ ] Build disconnected search and typed policy builder first.
-- [ ] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
-- [ ] Build report calculation/provenance disclosure and JSON view.
-- [ ] Add wagmi action flow with chain/account invalidation and exact wallet preview.
-- [ ] Add loading, stale, partial, reorged, simulation-failed, submitted, confirmed, and reverted states.
-- [ ] Write Playwright path: policy → mixed results → report → simulation → mocked wallet handoff; use fork test for real EVM behavior.
-- [ ] Test keyboard-only flow and mobile evidence parity.
-- [ ] Commit as `feat(tr4ce): ship evidence-first interface`.
+- [x] Implement design tokens from `DESIGN-SYSTEMS.md` and verify AA contrast.
+- [x] Build disconnected search and typed policy builder first.
+- [x] Build comparison with `PASS/FAIL/UNKNOWN`, completeness, and as-of block.
+- [x] Build report calculation/provenance disclosure and JSON view.
+- [x] Add wagmi action flow with chain/account invalidation and exact wallet preview.
+- [x] Add partial, stale, simulation-failed, submitted, confirmed and reverted states.
+- [ ] Add loading and reorged states.
+- [x] Write Playwright path: policy → mixed results → report → provenance → simulation → mocked wallet handoff.
+- [ ] Use a fork test for real EVM behavior.
+- [x] Test keyboard-only flow and mobile evidence parity.
+- [x] Commit as `feat(tr4ce): ship evidence-first interface`.
 
 Acceptance: A user can explain a failed/unknown rule and inspect exact provenance without a wallet; no APY headline outranks policy status.
+
+> **The visual product already existed; the data did not.** Every route and component was built
+> against `src/demo/fixtures.ts`, deliberately — the Task 9 design spec says so and names the seam:
+> *"When Task 6 exists, a single fixture-provider module is replaced with HTTP reads."* This task is
+> that replacement. It turned out to be three places rather than one: both dynamic routes enumerated
+> fixture ids through `generateStaticParams`, and the comparison surface computed its results
+> synchronously in the browser. `generateStaticParams` is gone from both — a `trc_` id is a digest of
+> observations and an `act_` id is generated, so neither set is knowable at build time.
+>
+> **The browser never talks to the evidence API.** Every call goes through a route handler under
+> `app/api`. Not for CORS — the API mounts none — but because it has no authentication at all:
+> reaching it from the browser means reaching it from anyone, and every visitor could then write
+> reports into the database. `TR4CE_API_URL` stays server-side.
+>
+> **The policy builder posts to the endpoint that was built for it.** `POST /v1/policies/evaluate`
+> takes `policy: z.unknown()` and answers with issues rather than a rejection (TR-F-024), so the
+> browser holds no second copy of the rules. Three read-only presets and a dead "Use this policy"
+> button became six editable fields with issues rendered beside them.
+>
+> **Four defects the work surfaced, all fixed:**
+>
+> - `evaluatePolicy` answers **422** with the *ordinary* response body carrying `issues`, not the
+>   error envelope. The first client treated any non-2xx as a failure and discarded them, so an
+>   invalid draft produced "something went wrong" and no indication of what.
+> - The evaluator reports issue paths relative to the policy (`minHistoryDays`), not to the request
+>   that carried it. A `policy.` prefix meant no issue ever matched a field, and the panel looked
+>   correct while showing none.
+> - `ScrollMotion`'s fail-safe restored `opacity` after 2.5s, but `autoAlpha: 0` hides through
+>   `visibility: hidden`. The safety net that exists so nothing stays invisible when a scroll trigger
+>   never fires did nothing at all. Found at 390px, where the content below the fold is exactly what
+>   a phone reader must scroll to.
+> - `--shadow-lift` in `globals.css` reads `rgb(19 34 26 / 5 0%)` — a space inside the number makes
+>   the whole declaration invalid. Left as-is and reported rather than silently changed: it is a
+>   visual decision on someone else's palette.
+>
+> **Tokens moved, colours did not.** `styles/tokens.css` holds the palette exactly as shipped.
+> `DESIGN-SYSTEMS.md` section 3 named a different one (`--tr4ce-brand-500`) that was never
+> implemented; the design spec's own completion criteria say the document should reflect the
+> implemented system, so the document was brought into line rather than the interface repainted.
+> AA contrast is verified by `scripts/check-contrast.mjs`, which reads the token values and the
+> `color:`/`background:` pairs out of every stylesheet: **33 co-located pairs, all clearing 4.5:1.**
+> The script reports only pairs that certainly meet — a colour whose background comes from an
+> ancestor is checked by reading the component, and the script says so.
+>
+> **Playwright is not in `pnpm test`.** It needs a database, the API and a web server, and turbo runs
+> `test` everywhere; a 114 MB browser download is not a condition of checking out this repo. Run
+> `pnpm --filter @tr4ce/web e2e`. Twelve tests pass across a desktop and a 390px viewport, the two
+> skips being deliberate (keyboard is a desktop path, column parity a mobile one).
+>
+> **The wallet flow is not in this commit.** The acceptance clause is explicitly *"without a
+> wallet"*, and the read-only half is complete and provable on its own. `apps/web` still pins
+> TypeScript 5.7.3 against the root's 7.0.2, which is most likely to bite when wagmi's types arrive —
+> that must not hold up a finished path. The checklist item stays unticked until it ships.
+>
+> **`/actions/[id]` still renders the illustrative fixture.** It is the wallet page: its data comes
+> from `POST /v1/actions/prepare`, which needs an owner address. There is also a real API gap for the
+> second commit to close — `GET /v1/actions/:id` returns status only, with no calldata, so a user
+> reloading a prepared action cannot see the transactions again.
+
+> **Two v1 contract gaps sit behind the unticked state items.** `DataStateBanner` declares six states
+> and carries copy for all six, but only `partial` and `stale` are reachable today, and `reorged`
+> cannot be driven at all: `evidenceReportV1Schema` exposes no `canonical` or invalidation field, so
+> the database knows a report was invalidated by a reorg and the contract has no way to say it. That
+> is a v1 change, the same wall the policy-optional gap ran into. The four action-lifecycle states
+> live on `/actions/[id]`, which is the wallet page — they defer with it, alongside the
+> `GET /v1/actions/:id` calldata gap above.
+>
+> **The JSON disclosure was renamed rather than added.** It already existed, and its summary read
+> *"View illustrative report JSON"* — accurate against a fixture and wrong the moment the page began
+> rendering a stored report. Two neighbouring lines said the same thing. The rounding row is now
+> stated explicitly as the engine's floor (TR-F-013) with a note that it is not read back from the
+> report, because v1 carries no `rounding` field either.
+
+> ### Second commit: the wallet flow
+>
+> **The console stopped remembering and started asking.** It ran on a `useReducer` with six buttons
+> that walked the states by hand. Every one of those is gone: the API owns `prepared`, `simulated`,
+> `submitted`, `confirmed`, `reverted`, `expired` and `invalidated`, and judges them against the
+> chain when asked. The browser now owns exactly one thing — whether the user is in front of their
+> wallet — and `signingGate` is a pure function of the two, tested on its own.
+>
+> **Calldata lives in the tab that prepared it.** `POST /v1/actions/prepare` is the only response in
+> the contract carrying transactions; `GET /v1/actions/:id` answers with status alone. So a reload or
+> a shared link shows progress and says, in words, why it cannot show the bytes. Re-preparing to
+> recover them is not an option and the code says why: `prepared_action_live_binding_key` is unique
+> over the calldata hash only `WHERE status IN ('prepared','simulated')`, so once a hash is reported
+> the partial index no longer covers the row and preparing again would insert a *second* action.
+>
+> **`confirmed` and `reverted` are implemented but have never been observed here.** They are rendered
+> straight from `status.outcome`, and the mapping is unit-tested, but reaching them needs a
+> transaction that actually lands — which is the fork test still unticked above. `submitted` *is*
+> demonstrated end-to-end. Stated rather than implied, because "the state exists" and "the state has
+> been seen" are different claims.
+>
+> **Nothing is broadcast in the tests, and that is deliberate.** wagmi's mock connector forwards
+> `eth_sendTransaction` to whatever RPC the transport names, so the suite intercepts that request.
+> The interception is also what makes the strongest assertion possible: the `data` handed to the
+> wallet is compared character-for-character with the `data` rendered on the page. "Exact wallet
+> preview" was a claim until something compared the two strings. A second test reads TR-F-034 off the
+> same bytes — the approval encodes the exact amount and is not the max-uint pattern.
+>
+> **The transport carries no key.** `http()` with no URL uses the chain's public endpoint. The
+> project's RPC URLs carry an Alchemy key, and anything wagmi needed in the browser would inline it
+> into the bundle. Nothing on the wallet path wants an authenticated node: status comes from the API,
+> and signing goes to the wallet's own provider.
+>
+> **Two things the work turned up that are not web bugs:**
+>
+> - `POST /v1/actions/:id/submitted` reports a duplicate `(chain_id, transaction_hash)` as
+>   `ACTION_NOT_AVAILABLE` carrying a raw `Failed query: insert into ...`. The constraint is right —
+>   one hash belongs to one call of one action — but `messageOf(error)` drops `error.cause`, so the
+>   one sentence that explains the refusal never reaches the caller. Left for a follow-up rather than
+>   widened into this commit.
+> - Migration `0004_prepared_actions.sql` had never run on the local development database, so every
+>   prepare answered 500 until it was applied. It is still unapplied on Supabase, and Task 10's
+>   deploy item depends on it.
+>
+> **TypeScript was aligned first, on its own.** `apps/web` pinned 5.7.3 against the root's 7.0.2 and
+> was the only package pinning a compiler at all. Bumped in a separate commit before wagmi arrived,
+> so a break would read as a compiler change rather than as new dependencies. Nothing needed changing.
+>
+> **`NEXT_PUBLIC_TR4CE_WALLET_MODE=mock` must never be set in production.** It offers a connector that
+> signs nothing while the app reports hashes to the API. `walletMode()` is exported and tested so the
+> exact-string check is asserted rather than trusted to a comment.
+>
+> Two consequences of that flag worth stating. `pnpm e2e:wallet` builds with it and leaves that build
+> in `.next`, so a `next start` afterwards serves the mock connector from what looks like an ordinary
+> build — harmless in a deploy, which builds fresh, and a trap locally. And the shipping
+> configuration is the one *without* the flag, so the read-only suite was run against a default build
+> as well: twelve pass, the wallet specs skip themselves, and `WalletBar` now mounting on every
+> report page changes nothing there.
+>
+> **The interface prepares deposits only.** `prepareActionRequestSchema`, the API and the MCP's
+> `prepare_redeem` all take both operations; `PrepareAction` sends `operation: "deposit"` and offers
+> no choice. A deliberate MVP narrowing rather than a limit of the stack, and the redemption path is
+> a form field rather than new plumbing.
 
 ## Task 10: Evaluate, deploy, and prove the demo
 

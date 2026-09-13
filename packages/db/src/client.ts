@@ -2,14 +2,20 @@ import type { ExtractTablesWithRelations } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase, type PostgresJsTransaction } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
+import * as actionsSchema from "./schema/actions.js";
 import * as cursorsSchema from "./schema/cursors.js";
 import * as observationsSchema from "./schema/observations.js";
+import * as policiesSchema from "./schema/policies.js";
 import * as rawSchema from "./schema/raw.js";
 import * as registrySchema from "./schema/registry.js";
+import * as reportsSchema from "./schema/reports.js";
 
 export const schema = {
   ...registrySchema,
   ...observationsSchema,
+  ...policiesSchema,
+  ...reportsSchema,
+  ...actionsSchema,
   ...cursorsSchema,
   ...rawSchema,
 };

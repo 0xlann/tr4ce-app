@@ -1,0 +1,27 @@
+{
+  "name": "@tr4ce/chain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tr4ce/domain": "workspace:*",
+    "@tr4ce/evidence": "workspace:*",
+    "viem": "2.56.3",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@tr4ce/test-vaults": "workspace:*",
+    "@types/node": "24.10.1"
+  }
+}

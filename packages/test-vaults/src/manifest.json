@@ -29,8 +29,8 @@
       "status": "listed",
       "statusReason": null,
       "evidence": {
-        "verifiedAt": "2026-09-04T18:58:13.000Z",
-        "rpcProviderKey": "base-public-mainnet",
+        "verifiedAt": "2026-09-06T08:36:54.000Z",
+        "rpcProviderKey": "base-alchemy-mainnet",
         "codeHash": "0x904289f0cca9814e4440e741e0d56aafc656f5889f3f032462a96e72df4eb9ad",
         "implementationAddress": null,
         "implementationCodeHash": null,
@@ -129,11 +129,11 @@
           },
           {
             "method": "decimals",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000012",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -165,11 +165,11 @@
           },
           {
             "method": "maxWithdraw",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000001",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -183,20 +183,20 @@
           },
           {
             "method": "previewDeposit",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000c8345d4f45b4390",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
             "method": "previewRedeem",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010ec60",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           }
         ],
@@ -225,8 +225,8 @@
       "status": "listed",
       "statusReason": null,
       "evidence": {
-        "verifiedAt": "2026-09-04T18:59:02.000Z",
-        "rpcProviderKey": "base-public-mainnet",
+        "verifiedAt": "2026-09-06T08:36:55.000Z",
+        "rpcProviderKey": "base-alchemy-mainnet",
         "codeHash": "0x453411046b182e0bdc46df9d09dd8be7102f2a95f6fc986fd981a56ea0323afc",
         "implementationAddress": null,
         "implementationCodeHash": null,
@@ -242,11 +242,11 @@
           },
           {
             "method": "decimals",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50879441",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000012",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -325,11 +325,11 @@
           },
           {
             "method": "decimals",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000012",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -361,11 +361,11 @@
           },
           {
             "method": "maxWithdraw",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000019c4763dfda",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -379,20 +379,20 @@
           },
           {
             "method": "previewDeposit",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000ccf3774f522a9f9",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
             "method": "previewRedeem",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000000010880b",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           }
         ],
@@ -421,8 +421,8 @@
       "status": "listed",
       "statusReason": null,
       "evidence": {
-        "verifiedAt": "2026-09-04T18:59:52.000Z",
-        "rpcProviderKey": "base-public-mainnet",
+        "verifiedAt": "2026-09-06T08:36:56.000Z",
+        "rpcProviderKey": "base-alchemy-mainnet",
         "codeHash": "0x1a2bda1e5d6b66646fe4cab689cd3990362ea42c53f17345137c0b06d0555400",
         "implementationAddress": "0xd377919fa87120584b21279a491f82d5265a139c",
         "implementationCodeHash": "0x15b3018d50c4988a5e21fdc9e87e7f9ace4789a4514a6235c93ff8657b952239",
@@ -512,11 +512,11 @@
         "historicalProbes": [
           {
             "method": "asset",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -539,11 +539,11 @@
           },
           {
             "method": "totalSupply",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000042942296a7",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -566,11 +566,11 @@
           },
           {
             "method": "maxRedeem",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000239f45312c",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -584,11 +584,11 @@
           },
           {
             "method": "previewRedeem",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x00000000000000000000000000000000000000000000000000000000005e69d2",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           }
         ],
@@ -617,8 +617,8 @@
       "status": "listed",
       "statusReason": null,
       "evidence": {
-        "verifiedAt": "2026-09-04T19:00:41.000Z",
-        "rpcProviderKey": "base-public-mainnet",
+        "verifiedAt": "2026-09-06T08:36:58.000Z",
+        "rpcProviderKey": "base-alchemy-mainnet",
         "codeHash": "0x9cbbbf6a1173fae2d7728e88b6e98819cdb39903e9df82fef7b439675b52d86a",
         "implementationAddress": null,
         "implementationCodeHash": null,
@@ -708,11 +708,11 @@
         "historicalProbes": [
           {
             "method": "asset",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -735,11 +735,11 @@
           },
           {
             "method": "totalSupply",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x000000000000000000000000000000000000000000000000000000d732c59c3d",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
@@ -753,21 +753,21 @@
           },
           {
             "method": "maxWithdraw",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000000",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           },
           {
             "method": "maxRedeem",
-            "status": "nonstandard_zero",
+            "status": "supported",
             "atBlock": "50577041",
             "rawResult": "0x0000000000000000000000000000000000000000000000000000000000000000",
             "revertData": null,
-            "reasonCode": "AMBIGUOUS_CAPABILITY",
-            "note": "Returned zero for an owner holding shares; raw result preserved, capacity unresolved."
+            "reasonCode": null,
+            "note": null
           },
           {
             "method": "previewDeposit",
@@ -780,11 +780,11 @@
           },
           {
             "method": "previewRedeem",
-            "status": "reverted",
+            "status": "supported",
             "atBlock": "50577041",
-            "rawResult": null,
+            "rawResult": "0x0000000000000000000000000000000000000000000000000000000000107861",
             "revertData": null,
-            "reasonCode": "CALL_REVERTED",
+            "reasonCode": null,
             "note": null
           }
         ],

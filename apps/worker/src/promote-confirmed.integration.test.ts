@@ -90,7 +90,9 @@ describe.skipIf(url === undefined)("worker orchestration", () => {
 
   beforeEach(async () => {
     await db.execute(
-      sql`TRUNCATE report_observation, evidence_report, reorg_invalidation, vault_flow, vault_snapshot,
+      sql`TRUNCATE transaction_receipt, simulation, prepared_action,
+                   rule_result, report_observation, evidence_report, rpc_observation,
+                   reorg_invalidation, vault_flow, vault_snapshot,
                    indexer_cursor, raw_erc4626_vault_snapshot, cursors`,
     );
   });

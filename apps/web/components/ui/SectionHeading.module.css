@@ -1,0 +1,26 @@
+.heading { display: grid; gap: 18px; max-width: 780px; }
+
+.center {
+  justify-items: center;
+  text-align: center;
+}
+
+.center .detail { margin-inline: auto; }
+
+.row {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: clamp(30px, 4.2vw, 52px);
+}
+
+.title em { font-size: 1.04em; }
+
+.aside { padding-bottom: 6px; }
+
+.detail { margin: 0; }

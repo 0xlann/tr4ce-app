@@ -121,73 +121,6 @@ export const vaultSnapshot = pgTable(
 );
 
 /**
- * Minimal report identity — ERD.md section 6.
- *
- * Task 6 owns the full evidence report schema (rule results, rpc observations, policy links). Only
- * what a deep reorg has to reach is defined here, because "a detected deep reorg invalidates every
- * promoted dependent" is a Task 3 acceptance clause and cannot be proven against tables that do
- * not exist. Task 6 extends these columns; it does not replace them.
- */
-export const evidenceReport = pgTable(
-  "evidence_report",
-  {
-    id: uuid("id").primaryKey(),
-    vaultId: uuid("vault_id")
-      .notNull()
-      .references(() => vault.id),
-    chainId: bigint("chain_id", { mode: "number" }).notNull(),
-    asOfBlockNumber: numeric("as_of_block_number", { precision: 78, scale: 0 }).notNull(),
-    asOfBlockHash: bytea("as_of_block_hash").notNull(),
-    schemaVersion: text("schema_version").notNull(),
-    calculationVersion: text("calculation_version").notNull(),
-    /**
-     * Invalidation is state, not deletion (ERD section 11). A report whose evidence was orphaned
-     * stays readable and stays cited; it simply stops being canonical.
-     */
-    canonical: boolean("canonical").notNull().default(true),
-    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
-    invalidationReason: text("invalidation_reason"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("evidence_report_vault_idx").on(table.vaultId, table.asOfBlockNumber),
-    uniqueIndex("evidence_report_id_vault_key").on(table.id, table.vaultId),
-  ],
-);
-
-/**
- * Which observations a report rests on.
- *
- * Exactly one of the two observation columns is set, enforced by a CHECK in the migration. The
- * composite foreign keys are the point of this table: they make it impossible for a report on one
- * vault to cite another vault's observation through an application bug.
- */
-export const reportObservation = pgTable(
-  "report_observation",
-  {
-    id: uuid("id").primaryKey(),
-    reportId: uuid("report_id")
-      .notNull()
-      .references(() => evidenceReport.id),
-    vaultId: uuid("vault_id")
-      .notNull()
-      .references(() => vault.id),
-    vaultFlowId: uuid("vault_flow_id").references(() => vaultFlow.id),
-    vaultSnapshotId: uuid("vault_snapshot_id").references(() => vaultSnapshot.id),
-    role: text("role").notNull(),
-  },
-  (table) => [
-    uniqueIndex("report_observation_unique").on(
-      table.reportId,
-      table.vaultFlowId,
-      table.vaultSnapshotId,
-    ),
-    index("report_observation_flow_idx").on(table.vaultFlowId),
-    index("report_observation_snapshot_idx").on(table.vaultSnapshotId),
-  ],
-);
-
-/**
  * Append-only reorg audit trail.
  *
  * One row per subject invalidated by one detected deep reorg. Nothing here is ever updated or
@@ -202,7 +135,11 @@ export const reorgInvalidation = pgTable(
     orphanedBlockHash: bytea("orphaned_block_hash").notNull(),
     canonicalBlockHash: bytea("canonical_block_hash").notNull(),
     subjectKind: text("subject_kind").notNull(),
-    subjectId: uuid("subject_id").notNull(),
+    /**
+     * Text, not uuid: the subject may be a `vault_flow`, a `vault_snapshot`, or an
+     * `evidence_report`, and report ids are `trc_<hex>` rather than UUIDs.
+     */
+    subjectId: text("subject_id").notNull(),
     reasonCode: text("reason_code").notNull(),
     detectedAt: timestamp("detected_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -221,22 +158,5 @@ export const vaultSnapshotRelations = relations(vaultSnapshot, ({ one }) => ({
   capability: one(vaultCapability, {
     fields: [vaultSnapshot.capabilityId],
     references: [vaultCapability.id],
-  }),
-}));
-
-export const evidenceReportRelations = relations(evidenceReport, ({ one, many }) => ({
-  vault: one(vault, { fields: [evidenceReport.vaultId], references: [vault.id] }),
-  observations: many(reportObservation),
-}));
-
-export const reportObservationRelations = relations(reportObservation, ({ one }) => ({
-  report: one(evidenceReport, {
-    fields: [reportObservation.reportId],
-    references: [evidenceReport.id],
-  }),
-  flow: one(vaultFlow, { fields: [reportObservation.vaultFlowId], references: [vaultFlow.id] }),
-  snapshot: one(vaultSnapshot, {
-    fields: [reportObservation.vaultSnapshotId],
-    references: [vaultSnapshot.id],
   }),
 }));

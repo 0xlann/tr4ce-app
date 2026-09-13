@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
     }
   },
   "scripts": {
@@ -16,5 +20,8 @@
   },
   "dependencies": {
     "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1"
   }
 }

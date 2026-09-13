@@ -1,0 +1,26 @@
+{
+  "name": "@tr4ce/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "start": "node --env-file-if-exists=../../.env dist/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@tr4ce/api": "workspace:*",
+    "@tr4ce/db": "workspace:*",
+    "@tr4ce/domain": "workspace:*",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@tr4ce/test-vaults": "workspace:*",
+    "@types/node": "24.10.1",
+    "drizzle-orm": "0.45.2",
+    "viem": "2.56.3",
+    "@tr4ce/chain": "workspace:*"
+  }
+}

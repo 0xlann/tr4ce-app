@@ -111,6 +111,38 @@ export function reportObservationId(reportId: string, observationId: string): st
 }
 
 /**
+ * A wallet is its address. Nothing else about it is identity — ERD section 5 says as much, and
+ * `chain_scope` is explicitly "not identity".
+ */
+export function walletId(address: string): string {
+  return uuidV5(name("wallet", [address]));
+}
+
+/**
+ * A policy is keyed by its owner and name.
+ *
+ * Derived rather than random so a caller who submits the same policy twice reuses the existing
+ * row instead of accumulating a duplicate policy per request — the same idempotency the report id
+ * gives one layer up.
+ */
+export function policyId(wallet: string, policyName: string): string {
+  return uuidV5(name("policy", [wallet, policyName]));
+}
+
+/** Keyed on content, matching the `(policy_id, content_hash)` unique index in the migration. */
+export function policyVersionId(policy: string, contentHash: string): string {
+  return uuidV5(name("policy_version", [policy, contentHash]));
+}
+
+export function policyRuleId(policyVersion: string, ruleKey: string): string {
+  return uuidV5(name("policy_rule", [policyVersion, ruleKey]));
+}
+
+export function ruleResultId(reportId: string, policyRule: string): string {
+  return uuidV5(name("rule_result", [reportId, policyRule]));
+}
+
+/**
  * Invalidation rows are append-only audit records, so their id includes the detection block hash:
  * a second reorg over the same subject appends a new row rather than overwriting the first.
  */

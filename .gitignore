@@ -16,3 +16,11 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# QA render artifacts
+reference/shots/
+reference/frames/
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/
