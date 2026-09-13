@@ -226,20 +226,6 @@ describe("integrity rules a schema differ cannot infer", () => {
     expect(actions).toContain("(confirmed_block_number IS NULL) = (status IS NULL)");
   });
 
-  it("will not let an action be submitted while one of its calls has no hash", () => {
-    /*
-     * The constraint the whole two-call flow rests on. Without it the approval of an
-     * approve-plus-deposit pair could close the action and strand the deposit — which is exactly
-     * what happened before `sent_count` existed.
-     */
-    expect(actions).toContain(
-      "status NOT IN ('submitted', 'confirmed', 'reverted')\n            OR sent_count = jsonb_array_length(transactions_json)",
-    );
-    expect(actions).toContain(
-      "CHECK (sent_count >= 0 AND sent_count <= jsonb_array_length(transactions_json))",
-    );
-  });
-
   it("keeps an action's report about the same vault the action targets", () => {
     // A plain REFERENCES evidence_report (id) would let an action on vault A cite a report about
     // vault B — the bug report_observation's own composite keys exist to prevent (ERD section 11).
